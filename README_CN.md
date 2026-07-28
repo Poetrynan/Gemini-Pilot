@@ -171,7 +171,9 @@ Gemini Pilot/
 
 <div align="center">
 
-[![Star History Chart](https://api.star-history.com/svg?repos=Poetrynan/Gemini-Pilot&type=Date)](https://star-history.com/#Poetrynan/Gemini-Pilot&Date)
+<a href="https://star-history.com/#Poetrynan/Gemini-Pilot&Date">
+  <img src="https://img.shields.io/github/stars/Poetrynan/Gemini-Pilot?style=for-the-badge&logo=github&color=4285F4" alt="GitHub Stars" />
+</a>
 
 *感谢您为 Gemini Pilot 点亮 Star！您的支持是本项目持续迭代的最大动力。*
 

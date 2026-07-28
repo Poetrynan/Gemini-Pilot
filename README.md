@@ -225,7 +225,9 @@ const CONFIG = {
 
 <div align="center">
 
-[![Star History Chart](https://api.star-history.com/svg?repos=Poetrynan/Gemini-Pilot&type=Date)](https://star-history.com/#Poetrynan/Gemini-Pilot&Date)
+<a href="https://star-history.com/#Poetrynan/Gemini-Pilot&Date">
+  <img src="https://img.shields.io/github/stars/Poetrynan/Gemini-Pilot?style=for-the-badge&logo=github&color=4285F4" alt="GitHub Stars" />
+</a>
 
 *Thank you for starring Gemini Pilot! Your support keeps this project evolving.*
 
