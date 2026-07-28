@@ -194,10 +194,7 @@ Gemini Pilot/
 │   └── integration.js     # Module boundary manager (maintains right panel purity)
 ├── icons/                 # Extension icons (16px, 32px, 48px, 128px)
 ├── README.md              # English project documentation
-├── README_CN.md           # Chinese project documentation
-├── BUGFIXES.md            # Comprehensive bugfix & changelog log
-├── TECHNICAL_GUIDE.md     # Developer guide & technical architecture specifications
-├── PROGRESS.md            # Feature completion progress & performance milestones
+└── README_CN.md           # Chinese project documentation
 ```
 
 ---

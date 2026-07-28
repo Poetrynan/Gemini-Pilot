@@ -1,3 +1,10 @@
+# ======================== Internal Documentation ========================
+BUGFIXES.md
+PROGRESS.md
+HOW_IT_WORKS.md
+TECHNICAL_GUIDE.md
+ORIGINAL_REQUEST.md
+
 # ======================== Security & Extension Credentials ========================
 # Private keys, certificates, and packed extensions must NEVER be committed to Git!
 *.pem
@@ -31,4 +38,3 @@ Thumbs.db
 .zcode/
 reference/
 test_*.js
-ORIGINAL_REQUEST.md

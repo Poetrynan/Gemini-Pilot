@@ -154,10 +154,7 @@ Gemini Pilot/
 │   └── integration.js     # 模块边界管理器（保持右侧面板纯洁性）
 ├── icons/                 # 扩展图标集 (16px, 32px, 48px, 128px)
 ├── README.md              # 英文 README 引导文档
-├── README_CN.md           # 中文 README 引导文档
-├── BUGFIXES.md            # Bug 修复日志与 Changelog
-├── TECHNICAL_GUIDE.md     # 开发者架构与技术原理指南
-├── PROGRESS.md            # 功能完成度与里程碑记录
+└── README_CN.md           # 中文 README 引导文档
 ```
 
 ---
