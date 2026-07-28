@@ -1,0 +1,886 @@
+/* =========================================================
+   Gemini Trace - Folders (Approach A: self-contained top section)
+   A single #gt-folders-section is injected at the TOP of Gemini's
+   native conversation sidebar. It is fully self-managed; we never
+   touch or reorder native Gemini rows. Styling reads as a
+   first-party "grouping" section rather than a floating panel.
+   ========================================================= */
+
+/* ---------- Section container (injected at top of sidebar) ---------- */
+/* Light-mode backgrounds are OPAQUE (not transparent) so the section looks
+   solid even when Gemini's native sidebar is in dark mode but our plugin
+   is in light mode. Transparent backgrounds let the dark sidebar bleed
+   through, making text and UI look ghostly/"floating". */
+#gt-folders-section {
+  background: #FEFCF8;
+  border-bottom: 1px solid rgba(128, 113, 91, 0.16);
+  border-radius: 0;
+  padding: 4px 0 6px;
+  margin: 0;
+  box-sizing: border-box;
+  width: 100%;
+  font-family: Google Sans, Roboto, "Segoe UI", Arial, sans-serif;
+}
+
+/* ---------- Section header (label + new button) ---------- */
+.gt-folders-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 12px 6px;
+  box-sizing: border-box;
+  background: #FEFCF8;
+}
+
+.gt-folders-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--gt-text-secondary, #5F5D59);
+  font: 600 12px/20px Google Sans, Roboto, "Segoe UI", Arial, sans-serif;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+.gt-folders-new-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex: 0 0 auto !important;
+  width: auto !important;
+  min-width: 62px !important;
+  height: 30px !important;
+  max-width: none !important;
+  padding: 0 10px !important;
+  gap: 5px !important;
+  box-sizing: border-box !important;
+  border: 1px solid rgba(128, 105, 73, 0.28) !important;
+  border-radius: 15px !important;
+  background: rgba(196, 169, 125, 0.13) !important;
+  color: var(--gt-accent, #7E684B) !important;
+  font: 600 12px/1 Google Sans, Roboto, "Segoe UI", Arial, sans-serif !important;
+  letter-spacing: 0 !important;
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+  overflow: visible !important;
+  writing-mode: horizontal-tb !important;
+  text-orientation: mixed !important;
+  cursor: pointer !important;
+}
+
+.gt-folders-new-btn:hover,
+.gt-folders-new-btn:focus-visible {
+  background: rgba(196, 169, 125, 0.25) !important;
+  border-color: rgba(128, 105, 73, 0.5) !important;
+  outline: none !important;
+}
+
+/* ---------- Folders list ---------- */
+.gt-folders-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 8px;
+  background: #FEFCF8;
+}
+
+/* ---------- Folder row ---------- */
+.gt-folder-row {
+  display: flex;
+  flex-direction: column;
+  border-radius: 8px;
+}
+
+.gt-folder-row-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  user-select: none;
+  color: var(--gt-text-secondary, #5F5D59);
+  writing-mode: horizontal-tb !important;
+}
+
+.gt-folder-row-head:hover {
+  background: rgba(196, 169, 125, 0.15);
+}
+
+.gt-folder-color-dot {
+  flex: 0 0 auto;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--gt-accent, #8B7355);
+}
+
+.gt-folder-toggle {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  color: #9A8E78;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  writing-mode: horizontal-tb !important;
+}
+
+.gt-folder-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--gt-text-primary, #1F1F1F);
+  font: 600 13px/20px Google Sans, Roboto, "Segoe UI", Arial, sans-serif;
+}
+
+.gt-folder-count {
+  flex: 0 0 auto;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  box-sizing: border-box;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 10px;
+  background: rgba(196, 169, 125, 0.18);
+  color: var(--gt-accent, #7E684B);
+  font: 600 11px/20px Google Sans, Roboto, "Segoe UI", Arial, sans-serif;
+  white-space: nowrap;
+}
+
+.gt-folder-menu-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex: 0 0 auto !important;
+  width: 28px !important;
+  height: 28px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 14px !important;
+  background: transparent !important;
+  color: var(--gt-text-muted, #8A8277) !important;
+  cursor: pointer !important;
+  font-size: 16px !important;
+  line-height: 1 !important;
+  opacity: 0 !important;
+  transition: opacity 150ms ease, background 150ms ease !important;
+}
+
+.gt-folder-row-head:hover .gt-folder-menu-btn,
+.gt-folder-row-head:focus-within .gt-folder-menu-btn {
+  opacity: 1 !important;
+}
+
+.gt-folder-menu-btn:hover,
+.gt-folder-menu-btn:focus-visible {
+  background: rgba(128, 105, 73, 0.14) !important;
+  color: var(--gt-text-primary, #1F1F1F) !important;
+  outline: none !important;
+}
+
+/* Collapsed: hide the conversation block (kept empty by JS too). */
+.gt-folder-row.is-collapsed .gt-folder-convs {
+  display: none;
+}
+
+/* ---------- Conversation list inside an expanded folder ---------- */
+.gt-folder-convs {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding-left: 23px;
+  margin: 0 0 4px 9px;
+  border-left: 2px solid rgba(196, 169, 125, 0.3);
+}
+
+.gt-folder-conv {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--gt-text-secondary, #5F5D59);
+  writing-mode: horizontal-tb !important;
+}
+
+.gt-folder-conv:hover {
+  background: rgba(196, 169, 125, 0.15);
+  color: var(--gt-text-primary, #1F1F1F);
+}
+
+.gt-folder-conv.is-current {
+  background: rgba(196, 169, 125, 0.22);
+  color: var(--gt-text-primary, #1F1F1F);
+  font-weight: 600;
+}
+
+.gt-conv-icon {
+  flex: 0 0 auto;
+  width: 13px;
+  height: 13px;
+  color: #9A8E78;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.gt-conv-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gt-conv-remove {
+  flex: 0 0 auto;
+  background: transparent;
+  border: none;
+  color: #999;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 150ms ease, background 150ms ease;
+}
+
+.gt-folder-conv:hover .gt-conv-remove {
+  opacity: 1;
+}
+
+.gt-conv-remove:hover {
+  background: rgba(0, 0, 0, 0.08);
+  color: var(--gt-text-primary, #1F1F1F);
+}
+
+/* ---------- SVG icon helpers (toggle / plus / conv) ---------- */
+.gt-toolbar-plus-icon,
+.gt-folder-toggle,
+.gt-conv-icon {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex: 0 0 auto !important;
+  writing-mode: horizontal-tb !important;
+}
+
+.gt-toolbar-plus-icon {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+.gt-toolbar-plus-icon svg,
+.gt-folder-toggle svg,
+.gt-conv-icon svg {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  fill: none !important;
+  stroke: currentColor !important;
+  stroke-width: 1.8 !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+  transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+/* ---------- Drag & Drop ---------- */
+.gt-drag-over {
+  background: rgba(196, 169, 125, 0.25) !important;
+  border: 1.5px dashed var(--gt-accent, #8B7355) !important;
+  box-shadow: 0 0 16px rgba(196, 169, 125, 0.3) !important;
+  animation: gt-drag-pulse 1.2s infinite ease-in-out !important;
+}
+
+@keyframes gt-drag-pulse {
+  0% { box-shadow: 0 0 8px rgba(196, 169, 125, 0.2); }
+  50% { box-shadow: 0 0 18px rgba(196, 169, 125, 0.45); }
+  100% { box-shadow: 0 0 8px rgba(196, 169, 125, 0.2); }
+}
+
+.gt-dragging {
+  opacity: 0.5 !important;
+}
+
+/* Draggable native rows get a grab cursor. */
+[data-gt-conv-id][draggable="true"] {
+  cursor: grab;
+}
+
+/* Empty folder hint */
+.gt-folder-empty {
+  font-size: 11px;
+  font-style: italic;
+  color: var(--gt-text-muted, #9A958D);
+  padding: 2px 8px 4px;
+}
+
+/* ---------- Folder context menu (rename / color / delete) ---------- */
+.gt-folder-menu-overlay {
+  z-index: 999999 !important;
+}
+
+.gt-folder-menu {
+  background: rgba(255, 255, 255, 0.96) !important;
+  backdrop-filter: blur(24px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+  border: 1px solid rgba(196, 169, 125, 0.4) !important;
+  border-radius: 12px !important;
+  padding: 6px !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.16) !important;
+  min-width: 180px !important;
+}
+
+.gt-folder-menu-item {
+  padding: 8px 10px !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  font-size: 13px !important;
+  color: #1F1F1F !important;
+  transition: background 150ms ease !important;
+}
+
+.gt-folder-menu-item:hover {
+  background: rgba(196, 169, 125, 0.15) !important;
+}
+
+.gt-folder-menu-color {
+  display: flex !important;
+  align-items: center !important;
+  flex-wrap: wrap !important;
+  gap: 6px !important;
+}
+
+.gt-folder-menu-color-label {
+  width: 100%;
+  font-size: 11px;
+  color: #888;
+}
+
+.gt-swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  box-sizing: border-box;
+}
+
+.gt-swatch.is-selected {
+  border-color: #FFFFFF;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.3);
+}
+
+.gt-menu-danger {
+  color: #DC2626 !important;
+}
+
+/* ---------- Folder selector popup (right-click a conversation) ---------- */
+.gt-folder-selector-overlay {
+  z-index: 999999 !important;
+}
+
+.gt-folder-selector {
+  background: rgba(255, 255, 255, 0.94) !important;
+  backdrop-filter: blur(24px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+  border: 1px solid rgba(196, 169, 125, 0.35) !important;
+  border-radius: 12px !important;
+  padding: 8px !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15) !important;
+  min-width: 200px !important;
+}
+
+.gt-folder-selector-title {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: #888 !important;
+  padding: 6px 8px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+}
+
+.gt-folder-selector-item {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 8px 10px !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  font-size: 13px !important;
+  color: #1F1F1F !important;
+  min-width: 0 !important;
+  transition: background 150ms ease !important;
+}
+
+.gt-folder-selector-item:hover {
+  background: rgba(196, 169, 125, 0.15) !important;
+}
+
+.gt-selector-color-dot {
+  flex: 0 0 auto;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--gt-accent, #8B7355);
+}
+
+.gt-selector-divider {
+  height: 1px;
+  background: rgba(0, 0, 0, 0.08);
+  margin: 4px 0;
+}
+
+.gt-selector-danger {
+  color: #DC2626 !important;
+}
+
+/* ---------- Native 3-dots menu custom item (Material alignment) ---------- */
+.gt-native-menu-item {
+  display: flex !important;
+  align-items: center !important;
+  height: 48px !important;
+  padding: 0 16px !important;
+  font-family: Google Sans, Roboto, "Segoe UI", Arial, sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  color: var(--mat-menu-item-label-text-color, var(--gmat-sys-color-on-surface, var(--gt-text-primary, inherit))) !important;
+  cursor: pointer !important;
+  transition: background 150ms ease, color 150ms ease !important;
+  user-select: none !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
+}
+
+/* Dark mode adaptation for injected native menu items */
+body.dark-theme .gt-native-menu-item,
+body[data-gcn-theme="dark"] .gt-native-menu-item,
+html[dark] .gt-native-menu-item,
+[data-gcn-theme="dark"] .gt-native-menu-item,
+[data-gt-theme="dark"] .gt-native-menu-item,
+.mat-mdc-menu-panel[data-gcn-theme="dark"] .gt-native-menu-item {
+  color: #E3E3E3 !important;
+}
+
+.gt-native-menu-item:hover {
+  background: var(--gt-accent-light, rgba(196, 169, 125, 0.15)) !important;
+}
+
+body.dark-theme .gt-native-menu-item:hover,
+body[data-gcn-theme="dark"] .gt-native-menu-item:hover,
+html[dark] .gt-native-menu-item:hover,
+[data-gcn-theme="dark"] .gt-native-menu-item:hover,
+[data-gt-theme="dark"] .gt-native-menu-item:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #FFFFFF !important;
+}
+
+.gt-native-menu-icon {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 24px !important;
+  height: 24px !important;
+  margin-right: 14px !important;
+  color: currentColor !important;
+  flex-shrink: 0 !important;
+}
+
+.gt-native-menu-icon svg {
+  width: 20px !important;
+  height: 20px !important;
+  stroke: currentColor !important;
+}
+
+/* ---------- Dialogs ---------- */
+.gt-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000000;
+}
+
+.gt-dialog {
+  background: rgba(255, 255, 255, 0.98);
+  border-radius: 14px;
+  padding: 18px 20px;
+  width: 320px;
+  max-width: 90vw;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  color: #1F1F1F;
+}
+
+.gt-dialog h3 {
+  margin: 0 0 10px;
+  font-size: 16px;
+}
+
+.gt-dialog p {
+  margin: 6px 0;
+  font-size: 13px;
+  color: #444;
+}
+
+.gt-dialog-hint {
+  font-size: 12px !important;
+  color: #888 !important;
+}
+
+.gt-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+}
+
+.gt-input:focus {
+  border-color: var(--gt-accent, #8B7355);
+}
+
+.gt-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.gt-btn {
+  padding: 7px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  background: #fff;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.gt-btn-primary {
+  background: var(--gt-accent, #8B7355);
+  border-color: var(--gt-accent, #8B7355);
+  color: #fff;
+}
+
+.gt-btn-danger {
+  background: #DC2626;
+  border-color: #DC2626;
+  color: #fff;
+}
+
+.gt-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ---------- Toast ---------- */
+.gt-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(28, 26, 24, 0.92);
+  color: #FFFFFF;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(196, 169, 125, 0.4);
+  border-radius: 20px;
+  padding: 8px 18px;
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  z-index: 999999;
+  transition: opacity 300ms ease, transform 300ms ease;
+  animation: gt-toast-in 300ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes gt-toast-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* =========================================================
+   LIGHT MODE (data-gcn-theme="light")
+   ========================================================= */
+#gt-folders-section[data-gcn-theme="light"],
+#gt-folders-section[data-gt-theme="light"],
+.gt-folders-section[data-gcn-theme="light"],
+.gt-folders-section[data-gt-theme="light"] {
+  background: #FEFCF8 !important;
+  color: #1F1F1F !important;
+  border-bottom: 1px solid rgba(128, 113, 91, 0.16) !important;
+}
+
+#gt-folders-section[data-gcn-theme="light"] .gt-folders-header,
+#gt-folders-section[data-gt-theme="light"] .gt-folders-header,
+#gt-folders-section[data-gcn-theme="light"] .gt-folders-list,
+#gt-folders-section[data-gt-theme="light"] .gt-folders-list,
+#gt-folders-section[data-gcn-theme="light"] .gt-folder-row,
+#gt-folders-section[data-gt-theme="light"] .gt-folder-row,
+.gt-folder-row[data-gcn-theme="light"],
+.gt-folder-row[data-gt-theme="light"],
+#gt-folders-section[data-gcn-theme="light"] .gt-folder-row-head,
+#gt-folders-section[data-gt-theme="light"] .gt-folder-row-head,
+.gt-folder-row-head[data-gcn-theme="light"],
+.gt-folder-row-head[data-gt-theme="light"],
+#gt-folders-section[data-gcn-theme="light"] .gt-folder-convs,
+#gt-folders-section[data-gt-theme="light"] .gt-folder-convs,
+.gt-folder-convs[data-gcn-theme="light"],
+.gt-folder-convs[data-gt-theme="light"] {
+  background: #FEFCF8 !important;
+  color: #1F1F1F !important;
+}
+
+#gt-folders-section[data-gcn-theme="light"] .gt-folders-label,
+#gt-folders-section[data-gt-theme="light"] .gt-folders-label {
+  color: #5F5D59 !important;
+}
+
+#gt-folders-section[data-gcn-theme="light"] .gt-folder-name,
+#gt-folders-section[data-gt-theme="light"] .gt-folder-name {
+  color: #1F1F1F !important;
+  font-weight: 600 !important;
+}
+
+#gt-folders-section[data-gcn-theme="light"] .gt-folder-conv,
+#gt-folders-section[data-gt-theme="light"] .gt-folder-conv,
+.gt-folder-conv[data-gcn-theme="light"],
+.gt-folder-conv[data-gt-theme="light"] {
+  color: #4A4540 !important;
+  background: #FEFCF8 !important;
+}
+
+#gt-folders-section[data-gcn-theme="light"] .gt-folder-conv:hover,
+#gt-folders-section[data-gt-theme="light"] .gt-folder-conv:hover,
+.gt-folder-conv[data-gcn-theme="light"]:hover,
+.gt-folder-conv[data-gt-theme="light"]:hover {
+  background: rgba(196, 169, 125, 0.15) !important;
+  color: #1F1F1F !important;
+}
+
+#gt-folders-section[data-gcn-theme="light"] .gt-folder-conv.is-current,
+#gt-folders-section[data-gt-theme="light"] .gt-folder-conv.is-current,
+.gt-folder-conv[data-gcn-theme="light"].is-current,
+.gt-folder-conv[data-gt-theme="light"].is-current {
+  background: rgba(196, 169, 125, 0.22) !important;
+  color: #1F1F1F !important;
+  font-weight: 600 !important;
+}
+
+#gt-folders-section[data-gcn-theme="light"] .gt-folders-new-btn,
+#gt-folders-section[data-gt-theme="light"] .gt-folders-new-btn {
+  background: rgba(196, 169, 125, 0.13) !important;
+  border-color: rgba(128, 105, 73, 0.28) !important;
+  color: #7E684B !important;
+}
+
+/* =========================================================
+   DARK MODE (data-gcn-theme="dark")
+   ========================================================= */
+#gt-folders-section[data-gcn-theme="dark"],
+#gt-folders-section[data-gt-theme="dark"],
+.gt-folders-section[data-gcn-theme="dark"],
+.gt-folders-section[data-gt-theme="dark"] {
+  background: #1C1B1F !important;
+  color: #E6E1D8 !important;
+  border-bottom-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+#gt-folders-section[data-gcn-theme="dark"] .gt-folders-header,
+#gt-folders-section[data-gt-theme="dark"] .gt-folders-header {
+  background: #1C1B1F !important;
+  color: #E6E1D8 !important;
+}
+
+#gt-folders-section[data-gcn-theme="dark"] .gt-folders-list,
+#gt-folders-section[data-gt-theme="dark"] .gt-folders-list {
+  background: #1C1B1F !important;
+}
+
+#gt-folders-section[data-gcn-theme="dark"] .gt-folder-row,
+#gt-folders-section[data-gt-theme="dark"] .gt-folder-row,
+.gt-folder-row[data-gcn-theme="dark"],
+.gt-folder-row[data-gt-theme="dark"] {
+  background: #1C1B1F !important;
+  color: #E6E1D8 !important;
+}
+
+#gt-folders-section[data-gcn-theme="dark"] .gt-folder-toggle,
+#gt-folders-section[data-gt-theme="dark"] .gt-folder-toggle {
+  color: #A89E90 !important;
+}
+
+#gt-folders-section[data-gcn-theme="dark"] .gt-folders-label,
+#gt-folders-section[data-gt-theme="dark"] .gt-folders-label {
+  color: #C9C3B8 !important;
+}
+
+#gt-folders-section[data-gcn-theme="dark"] .gt-folders-new-btn,
+#gt-folders-section[data-gt-theme="dark"] .gt-folders-new-btn {
+  background: rgba(196, 169, 125, 0.22) !important;
+  border-color: rgba(196, 169, 125, 0.42) !important;
+  color: #E6D9B8 !important;
+}
+
+#gt-folders-section[data-gcn-theme="dark"] .gt-folders-new-btn:hover,
+#gt-folders-section[data-gt-theme="dark"] .gt-folders-new-btn:hover {
+  background: rgba(196, 169, 125, 0.35) !important;
+}
+
+#gt-folders-section[data-gcn-theme="dark"] .gt-folder-row-head,
+#gt-folders-section[data-gt-theme="dark"] .gt-folder-row-head,
+.gt-folder-row-head[data-gcn-theme="dark"],
+.gt-folder-row-head[data-gt-theme="dark"] {
+  color: #C9C3B8 !important;
+  background: #1C1B1F !important;
+}
+
+#gt-folders-section[data-gcn-theme="dark"] .gt-folder-row-head:hover,
+#gt-folders-section[data-gt-theme="dark"] .gt-folder-row-head:hover,
+.gt-folder-row-head[data-gcn-theme="dark"]:hover,
+.gt-folder-row-head[data-gt-theme="dark"]:hover {
+  background: #2A2830 !important;
+}
+
+#gt-folders-section[data-gcn-theme="dark"] .gt-folder-name,
+#gt-folders-section[data-gt-theme="dark"] .gt-folder-name {
+  color: #E6E1D8 !important;
+}
+
+#gt-folders-section[data-gcn-theme="dark"] .gt-folder-count,
+#gt-folders-section[data-gt-theme="dark"] .gt-folder-count {
+  background: rgba(196, 169, 125, 0.25) !important;
+  color: #E6D9B8 !important;
+}
+
+#gt-folders-section[data-gcn-theme="dark"] .gt-folder-menu-btn,
+#gt-folders-section[data-gt-theme="dark"] .gt-folder-menu-btn {
+  color: #A89E90 !important;
+}
+
+#gt-folders-section[data-gcn-theme="dark"] .gt-folder-menu-btn:hover,
+#gt-folders-section[data-gt-theme="dark"] .gt-folder-menu-btn:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: #FFFFFF !important;
+}
+
+#gt-folders-section[data-gcn-theme="dark"] .gt-folder-convs,
+#gt-folders-section[data-gt-theme="dark"] .gt-folder-convs,
+.gt-folder-convs[data-gcn-theme="dark"],
+.gt-folder-convs[data-gt-theme="dark"] {
+  border-left-color: rgba(255, 255, 255, 0.18) !important;
+  background: #1C1B1F !important;
+}
+
+#gt-folders-section[data-gcn-theme="dark"] .gt-folder-conv,
+#gt-folders-section[data-gt-theme="dark"] .gt-folder-conv,
+.gt-folder-conv[data-gcn-theme="dark"],
+.gt-folder-conv[data-gt-theme="dark"] {
+  color: #D8D3CA !important;
+  background: #1C1B1F !important;
+}
+
+#gt-folders-section[data-gcn-theme="dark"] .gt-folder-conv:hover,
+#gt-folders-section[data-gt-theme="dark"] .gt-folder-conv:hover,
+.gt-folder-conv[data-gcn-theme="dark"]:hover,
+.gt-folder-conv[data-gt-theme="dark"]:hover {
+  background: #2A2830 !important;
+  color: #FFFFFF !important;
+}
+
+#gt-folders-section[data-gcn-theme="dark"] .gt-folder-conv.is-current,
+#gt-folders-section[data-gt-theme="dark"] .gt-folder-conv.is-current,
+.gt-folder-conv[data-gcn-theme="dark"].is-current,
+.gt-folder-conv[data-gt-theme="dark"].is-current {
+  background: #332F3A !important;
+  color: #FFFFFF !important;
+}
+
+#gt-folders-section[data-gcn-theme="dark"] .gt-conv-icon,
+#gt-folders-section[data-gt-theme="dark"] .gt-conv-icon {
+  color: #A89E90 !important;
+}
+
+#gt-folders-section[data-gcn-theme="dark"] .gt-conv-remove:hover,
+#gt-folders-section[data-gt-theme="dark"] .gt-conv-remove:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: #FFFFFF !important;
+}
+
+.gt-folder-menu-overlay[data-gcn-theme="dark"] .gt-folder-menu,
+.gt-folder-menu-overlay[data-gt-theme="dark"] .gt-folder-menu {
+  background: rgba(28, 26, 24, 0.96) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+.gt-folder-menu-overlay[data-gcn-theme="dark"] .gt-folder-menu-item,
+.gt-folder-menu-overlay[data-gt-theme="dark"] .gt-folder-menu-item {
+  color: #E6E1DA !important;
+}
+
+.gt-folder-menu-overlay[data-gcn-theme="dark"] .gt-folder-menu-item:hover,
+.gt-folder-menu-overlay[data-gt-theme="dark"] .gt-folder-menu-item:hover {
+  background: rgba(196, 169, 125, 0.2) !important;
+}
+
+.gt-folder-selector-overlay[data-gcn-theme="dark"] .gt-folder-selector,
+.gt-folder-selector-overlay[data-gt-theme="dark"] .gt-folder-selector {
+  background: rgba(28, 26, 24, 0.96) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+.gt-folder-selector-overlay[data-gcn-theme="dark"] .gt-folder-selector-item,
+.gt-folder-selector-overlay[data-gt-theme="dark"] .gt-folder-selector-item {
+  color: #E6E1DA !important;
+}
+
+.gt-folder-selector-overlay[data-gcn-theme="dark"] .gt-folder-selector-item:hover,
+.gt-folder-selector-overlay[data-gt-theme="dark"] .gt-folder-selector-item:hover {
+  background: rgba(196, 169, 125, 0.2) !important;
+}
+
+.gt-folder-selector-overlay[data-gcn-theme="dark"] .gt-selector-divider,
+.gt-folder-selector-overlay[data-gt-theme="dark"] .gt-selector-divider {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.gt-dialog-overlay[data-gcn-theme="dark"] .gt-dialog,
+.gt-dialog-overlay[data-gt-theme="dark"] .gt-dialog {
+  background: rgba(28, 26, 24, 0.98);
+  color: #E6E1DA;
+}
+
+.gt-dialog-overlay[data-gcn-theme="dark"] .gt-dialog p,
+.gt-dialog-overlay[data-gt-theme="dark"] .gt-dialog p {
+  color: #C9C3B8;
+}
+
+.gt-dialog-overlay[data-gcn-theme="dark"] .gt-input,
+.gt-dialog-overlay[data-gt-theme="dark"] .gt-input {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: #E6E1DA;
+}
+
+/* ---------- Narrow sidebar ---------- */
+@media (max-width: 260px) {
+  .gt-folders-header { padding-left: 8px; padding-right: 8px; }
+  .gt-folders-new-btn { min-width: 30px !important; width: 30px !important; padding: 0 !important; }
+  .gt-folders-label { display: none !important; }
+  .gt-folders-list { padding: 0 6px; }
+  .gt-folder-row-head { padding-left: 8px; padding-right: 6px; gap: 4px; }
+  .gt-folder-menu-btn { width: 24px !important; height: 24px !important; }
+  .gt-folder-convs { margin-left: 6px; padding-left: 16px; }
+}

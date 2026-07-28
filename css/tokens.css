@@ -1,0 +1,174 @@
+/* ======================== Gemini Trace - Design Tokens ======================== */
+/* Shared Glassmorphism + Color Palette for All Modules */
+
+:root {
+  /* Milk White Palette */
+  --gt-milk: #FEFCF8;
+  --gt-cream: #F8F6F3;
+  --gt-vanilla: #F0EDE8;
+
+  /* Glass Surface */
+  --gt-glass-bg: rgba(255, 255, 255, 0.96);
+  --gt-glass-bg-solid: rgba(255, 255, 255, 0.98);
+  --gt-glass-border: rgba(255, 255, 255, 0.45);
+  --gt-glass-border-strong: rgba(255, 255, 255, 0.65);
+
+  /* Text */
+  --gt-text-primary: #1A1815;
+  --gt-text-secondary: #4A4540;
+  --gt-text-muted: #7A756E;
+
+  /* Accent - Warm Amber Neutral */
+  --gt-accent: #8B7355;
+  --gt-accent-hover: #7A6548;
+  --gt-accent-light: rgba(139, 115, 85, 0.12);
+  --gt-accent-border: rgba(139, 115, 85, 0.28);
+  --gt-accent-glow: rgba(139, 115, 85, 0.18);
+
+  /* Shadows */
+  --gt-shadow-sm: 0 2px 8px rgba(139, 115, 85, 0.06);
+  --gt-shadow-md: 0 4px 16px rgba(139, 115, 85, 0.08);
+  --gt-shadow-lg: 0 8px 32px rgba(139, 115, 85, 0.12);
+  --gt-shadow-glow: 0 0 24px rgba(139, 115, 85, 0.15);
+
+  /* Blur */
+  --gt-blur: 24px;
+
+  /* Transitions */
+  --gt-transition-fast: 150ms cubic-bezier(0.16, 1, 0.3, 1);
+  --gt-transition-smooth: 250ms cubic-bezier(0.16, 1, 0.3, 1);
+  --gt-transition-spring: 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Sizes */
+  --gt-radius-sm: 6px;
+  --gt-radius-md: 8px;
+  --gt-radius-lg: 12px;
+  --gt-radius-xl: 16px;
+}
+
+/* ======================== Dark Mode ======================== */
+[data-gt-theme="dark"],
+[data-gcn-theme="dark"] {
+  --gt-glass-bg: rgba(26, 24, 28, 0.82);
+  --gt-glass-bg-solid: rgba(26, 24, 28, 0.98);
+  --gt-glass-border: rgba(255, 255, 255, 0.1);
+  --gt-glass-border-strong: rgba(255, 255, 255, 0.16);
+
+  --gt-text-primary: #FFFFFF;
+  --gt-text-secondary: #E6E1D8;
+  --gt-text-muted: #A89E90;
+
+  --gt-accent: #C4A97D;
+  --gt-accent-hover: #D8BD91;
+  --gt-accent-light: rgba(196, 169, 125, 0.16);
+  --gt-accent-border: rgba(196, 169, 125, 0.3);
+  --gt-accent-glow: rgba(196, 169, 125, 0.25);
+
+  --gt-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.25);
+  --gt-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.35);
+  --gt-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.45);
+  --gt-shadow-glow: 0 0 24px rgba(196, 169, 125, 0.12);
+}
+
+/* ======================== Shared Components ======================== */
+
+/* Glass Panel */
+.gt-panel {
+  background: var(--gt-glass-bg);
+  backdrop-filter: blur(var(--gt-blur)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--gt-blur)) saturate(180%);
+  border: 1px solid var(--gt-glass-border);
+  border-radius: var(--gt-radius-xl);
+  box-shadow: var(--gt-shadow-md);
+}
+
+/* Glass Button */
+.gt-btn {
+  background: var(--gt-glass-bg);
+  border: 1px solid var(--gt-glass-border);
+  border-radius: var(--gt-radius-md);
+  color: var(--gt-text-secondary);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-family: inherit;
+  transition: background var(--gt-transition-fast), color var(--gt-transition-fast);
+}
+
+.gt-btn:hover {
+  background: var(--gt-accent-light);
+  color: var(--gt-text-primary);
+}
+
+.gt-btn-primary {
+  background: var(--gt-accent);
+  color: white;
+  border-color: var(--gt-accent);
+}
+
+.gt-btn-primary:hover {
+  background: #7A6548;
+  color: white;
+}
+
+.gt-btn-danger {
+  background: rgba(220, 38, 38, 0.1);
+  color: #DC2626;
+  border-color: rgba(220, 38, 38, 0.2);
+}
+
+.gt-btn-danger:hover {
+  background: rgba(220, 38, 38, 0.2);
+}
+
+/* Glass Input */
+.gt-input {
+  background: var(--gt-glass-bg);
+  border: 1px solid var(--gt-glass-border);
+  border-radius: var(--gt-radius-md);
+  color: var(--gt-text-primary);
+  padding: 8px 12px;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color var(--gt-transition-fast);
+}
+
+.gt-input:focus {
+  border-color: var(--gt-accent-border);
+}
+
+.gt-input::placeholder {
+  color: var(--gt-text-muted);
+}
+
+/* Checkbox */
+.gt-checkbox {
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--gt-glass-border);
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--gt-transition-fast);
+}
+
+.gt-checkbox.checked {
+  background: var(--gt-accent);
+  border-color: var(--gt-accent);
+}
+
+.gt-checkbox.checked::after {
+  content: '';
+  width: 4px;
+  height: 8px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg) translate(-1px, -1px);
+}

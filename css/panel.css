@@ -1,0 +1,62 @@
+/* ======================== Trace Navigation Panel (Integration Bridge) ======================== */
+/* Note: Primary panel styles reside in content.css. This stylesheet retains non-duplicated */
+/* module integration rules and theme compatibility overrides. */
+
+/* Performance & Reflow Optimization */
+#gcn-panel {
+  will-change: width, transform, opacity;
+  contain: layout style;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* Integration Sidebar Actions Collapsed State */
+#gcn-panel.gcn-collapsed #gcn-sidebar-actions {
+  display: none !important;
+}
+
+/* Extension Integration Header Buttons (Batch Delete & Folders integration) */
+.gcn-batch-btn,
+.gcn-folder-btn {
+  background: var(--gt-glass-bg);
+  border: 1px solid var(--gt-glass-border);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: var(--gt-radius-md);
+  color: var(--gt-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  transition: background var(--gt-transition-fast), transform var(--gt-transition-fast);
+}
+
+.gcn-batch-btn:hover,
+.gcn-folder-btn:hover {
+  background: rgba(255, 255, 255, 0.8);
+  color: var(--gt-text-primary);
+}
+
+.gcn-batch-btn:active,
+.gcn-folder-btn:active {
+  transform: scale(0.92);
+}
+
+/* Theme compatibility selectors: [data-gcn-theme="dark"] and [data-gt-theme="dark"] */
+[data-gcn-theme="dark"] .gcn-batch-btn,
+[data-gt-theme="dark"] .gcn-batch-btn,
+[data-gcn-theme="dark"] .gcn-folder-btn,
+[data-gt-theme="dark"] .gcn-folder-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: var(--gt-text-secondary);
+}
+
+[data-gcn-theme="dark"] .gcn-batch-btn:hover,
+[data-gt-theme="dark"] .gcn-batch-btn:hover,
+[data-gcn-theme="dark"] .gcn-folder-btn:hover,
+[data-gt-theme="dark"] .gcn-folder-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: var(--gt-text-primary);
+}

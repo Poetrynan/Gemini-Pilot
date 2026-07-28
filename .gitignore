@@ -1,0 +1,34 @@
+# ======================== Security & Extension Credentials ========================
+# Private keys, certificates, and packed extensions must NEVER be committed to Git!
+*.pem
+*.crx
+*.zip
+.env
+.env.*
+
+# ======================== Node / Build Artifacts ========================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+
+# ======================== OS & System Files ========================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ======================== IDE & Editor Files ========================
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ======================== Internal / Scratch Files ========================
+.agents/
+.zcode/
+reference/
+test_*.js
+ORIGINAL_REQUEST.md

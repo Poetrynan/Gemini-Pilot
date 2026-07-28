@@ -1,0 +1,336 @@
+/* ======================== Batch Delete Floating Bar ======================== */
+
+.gt-batch-floating-bar {
+  position: fixed !important;
+  bottom: 28px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  background: rgba(255, 255, 255, 0.94) !important;
+  backdrop-filter: blur(24px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+  border: 1px solid rgba(196, 169, 125, 0.4) !important;
+  border-radius: 16px !important;
+  padding: 12px 20px !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.16) !important;
+  z-index: 999999 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  min-width: 380px !important;
+  animation: gt-slide-up 200ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+@keyframes gt-slide-up {
+  from {
+    transform: translate(-50%, 28px) scale(0.96);
+    opacity: 0;
+  }
+  to {
+    transform: translate(-50%, 0) scale(1);
+    opacity: 1;
+  }
+}
+
+.gt-batch-bar-content {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 16px !important;
+}
+
+.gt-batch-bar-title {
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: #1C1A18 !important;
+}
+
+.gt-batch-bar-count {
+  font-size: 13px !important;
+  color: #5F5D59 !important;
+}
+
+.gt-batch-bar-count strong {
+  color: #8B7355 !important;
+  font-size: 15px !important;
+}
+
+.gt-batch-bar-select-all {
+  background: rgba(0, 0, 0, 0.05) !important;
+  color: #4A4540 !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  border-radius: 8px !important;
+  padding: 6px 12px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 150ms ease !important;
+}
+
+.gt-batch-bar-select-all:hover {
+  background: rgba(0, 0, 0, 0.1) !important;
+  color: #1C1A18 !important;
+}
+
+.gt-batch-bar-delete {
+  background: linear-gradient(135deg, #D9534F, #C9302C) !important;
+  color: #FFFFFF !important;
+  border: none !important;
+  border-radius: 8px !important;
+  padding: 6px 14px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  box-shadow: 0 4px 12px rgba(217, 83, 79, 0.3) !important;
+  transition: all 150ms ease !important;
+}
+
+.gt-batch-bar-delete:hover:not(:disabled) {
+  background: linear-gradient(135deg, #E0635F, #D93835) !important;
+  box-shadow: 0 6px 16px rgba(217, 83, 79, 0.4) !important;
+}
+
+.gt-batch-bar-delete:disabled {
+  opacity: 0.4 !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+}
+
+.gt-batch-bar-cancel {
+  background: transparent !important;
+  color: #888 !important;
+  border: none !important;
+  font-size: 12px !important;
+  cursor: pointer !important;
+  padding: 4px 8px !important;
+}
+
+.gt-batch-bar-cancel:hover {
+  color: #1C1A18 !important;
+}
+
+.gt-batch-progress {
+  display: none;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+.gt-batch-progress.active {
+  display: flex !important;
+}
+
+.gt-batch-progress-bar {
+  flex: 1 !important;
+  height: 4px !important;
+  background: rgba(0, 0, 0, 0.08) !important;
+  border-radius: 2px !important;
+  overflow: hidden !important;
+}
+
+.gt-batch-progress-bar-fill {
+  height: 100% !important;
+  background: linear-gradient(90deg, #A88B60, #8B7355) !important;
+  width: 0% !important;
+  transition: width 0.3s ease !important;
+}
+
+.gt-batch-progress-text {
+  font-size: 11px !important;
+  color: #888 !important;
+  white-space: nowrap !important;
+}
+
+/* ======================== Conversation Checkbox & Selected Row ======================== */
+
+.gt-conv-checkbox {
+  width: 18px !important;
+  height: 18px !important;
+  margin-right: 10px !important;
+  cursor: pointer !important;
+  accent-color: #8B7355 !important;
+  flex-shrink: 0 !important;
+}
+
+.gt-conv-selected {
+  background: rgba(196, 169, 125, 0.18) !important;
+  border-radius: 8px !important;
+  border-left: 3px solid var(--gt-accent, #8B7355) !important;
+  transition: all 150ms ease !important;
+}
+
+/* Dark Mode Floating Bar */
+.gt-batch-floating-bar[data-gcn-theme="dark"],
+.gt-batch-floating-bar[data-gt-theme="dark"] {
+  background: rgba(28, 26, 24, 0.94) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5) !important;
+}
+
+.gt-batch-floating-bar[data-gcn-theme="dark"] .gt-batch-bar-title,
+.gt-batch-floating-bar[data-gt-theme="dark"] .gt-batch-bar-title { color: #FFFFFF !important; }
+.gt-batch-floating-bar[data-gcn-theme="dark"] .gt-batch-bar-count,
+.gt-batch-floating-bar[data-gt-theme="dark"] .gt-batch-bar-count { color: #D8D3CA !important; }
+.gt-batch-floating-bar[data-gcn-theme="dark"] .gt-batch-bar-count strong,
+.gt-batch-floating-bar[data-gt-theme="dark"] .gt-batch-bar-count strong { color: #C4A97D !important; }
+.gt-batch-floating-bar[data-gcn-theme="dark"] .gt-batch-bar-select-all,
+.gt-batch-floating-bar[data-gt-theme="dark"] .gt-batch-bar-select-all {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #E6E1DA !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* ======================== UI UX Pro Max Glassmorphic Dialogs ======================== */
+
+.gt-dialog-overlay {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  background: rgba(0, 0, 0, 0.45) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 999999 !important;
+}
+
+.gt-dialog {
+  background: rgba(255, 255, 255, 0.94) !important;
+  backdrop-filter: blur(24px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+  border: 1px solid rgba(196, 169, 125, 0.35) !important;
+  border-radius: 20px !important;
+  padding: 24px !important;
+  min-width: 380px !important;
+  max-width: 460px !important;
+  width: 90% !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.16) !important;
+  box-sizing: border-box !important;
+}
+
+.gt-dialog h3 {
+  margin: 0 0 10px 0 !important;
+  color: #1C1A18 !important;
+  font-size: 17px !important;
+  font-weight: 600 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.gt-dialog p {
+  margin: 6px 0 14px 0 !important;
+  color: #5F5D59 !important;
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+}
+
+.gt-dialog-hint,
+.gt-dialog-warning {
+  font-size: 12px !important;
+  color: #D9534F !important;
+  margin-top: 8px !important;
+}
+
+.gt-dialog .gt-input,
+.gt-dialog-input,
+.gt-folder-input {
+  width: 100% !important;
+  box-sizing: border-box !important;
+  padding: 10px 14px !important;
+  font-size: 14px !important;
+  border-radius: 10px !important;
+  border: 1px solid rgba(139, 115, 85, 0.35) !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  color: #1C1A18 !important;
+  outline: none !important;
+  transition: border-color 150ms ease, box-shadow 150ms ease !important;
+}
+
+.gt-dialog .gt-input:focus,
+.gt-folder-input:focus {
+  border-color: #8B7355 !important;
+  box-shadow: 0 0 0 3px rgba(139, 115, 85, 0.15) !important;
+}
+
+.gt-dialog-actions {
+  display: flex !important;
+  gap: 10px !important;
+  justify-content: flex-end !important;
+  margin-top: 20px !important;
+}
+
+.gt-dialog .gt-btn {
+  padding: 9px 18px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  border-radius: 10px !important;
+  cursor: pointer !important;
+  transition: all 150ms ease !important;
+}
+
+.gt-dialog .gt-dialog-cancel {
+  background: rgba(0, 0, 0, 0.05) !important;
+  color: #5F5D59 !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+.gt-dialog .gt-dialog-cancel:hover {
+  background: rgba(0, 0, 0, 0.1) !important;
+  color: #1C1A18 !important;
+}
+
+.gt-dialog .gt-btn-primary,
+.gt-dialog .gt-dialog-confirm {
+  background: linear-gradient(135deg, #A88B60, #8B7355) !important;
+  color: #FFFFFF !important;
+  border: none !important;
+  box-shadow: 0 4px 14px rgba(139, 115, 85, 0.3) !important;
+}
+
+.gt-dialog .gt-btn-primary:hover,
+.gt-dialog .gt-dialog-confirm:hover {
+  background: linear-gradient(135deg, #B5986C, #998060) !important;
+  box-shadow: 0 6px 18px rgba(139, 115, 85, 0.4) !important;
+}
+
+.gt-dialog .gt-btn-primary:disabled,
+.gt-dialog .gt-dialog-confirm:disabled {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+}
+
+.gt-dialog .gt-btn-danger {
+  background: linear-gradient(135deg, #D9534F, #C9302C) !important;
+  color: #FFFFFF !important;
+  border: none !important;
+  box-shadow: 0 4px 14px rgba(217, 83, 79, 0.3) !important;
+}
+
+/* Dark Mode Overrides */
+.gt-dialog-overlay[data-gcn-theme="dark"] .gt-dialog,
+.gt-dialog-overlay[data-gt-theme="dark"] .gt-dialog {
+  background: rgba(28, 26, 24, 0.94) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5) !important;
+}
+
+.gt-dialog-overlay[data-gcn-theme="dark"] .gt-dialog h3,
+.gt-dialog-overlay[data-gt-theme="dark"] .gt-dialog h3 { color: #FFFFFF !important; }
+.gt-dialog-overlay[data-gcn-theme="dark"] .gt-dialog p,
+.gt-dialog-overlay[data-gt-theme="dark"] .gt-dialog p { color: #D8D3CA !important; }
+.gt-dialog-overlay[data-gcn-theme="dark"] .gt-folder-input,
+.gt-dialog-overlay[data-gt-theme="dark"] .gt-folder-input {
+  background: rgba(40, 37, 34, 0.9) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  color: #FFFFFF !important;
+}
+.gt-dialog-overlay[data-gcn-theme="dark"] .gt-dialog-cancel,
+.gt-dialog-overlay[data-gt-theme="dark"] .gt-dialog-cancel {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #E6E1DA !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
