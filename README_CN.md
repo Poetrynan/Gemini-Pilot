@@ -171,8 +171,12 @@ Gemini Pilot/
 
 <div align="center">
 
-<a href="https://star-history.com/#Poetrynan/Gemini-Pilot&Date">
-  <img src="https://img.shields.io/github/stars/Poetrynan/Gemini-Pilot?style=for-the-badge&logo=github&color=4285F4" alt="GitHub Stars" />
+<a href="https://www.star-history.com/?repos=Poetrynan%2FGemini-Pilot&type=date&legend=top-left">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=Poetrynan/Gemini-Pilot&type=date&theme=dark&legend=top-left&sealed_token=u8PEe8z97r5WS72xkJmcJu4WmKyXkpl3f_r4vVzmtDgYpv37tkD7GkKy6baQCvEVk5BpxsgZwA4R3d9u87o-WnlVFHYbBsdehaN3gY3H1rBXaPVyCwZBOg" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=Poetrynan/Gemini-Pilot&type=date&legend=top-left&sealed_token=u8PEe8z97r5WS72xkJmcJu4WmKyXkpl3f_r4vVzmtDgYpv37tkD7GkKy6baQCvEVk5BpxsgZwA4R3d9u87o-WnlVFHYbBsdehaN3gY3H1rBXaPVyCwZBOg" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=Poetrynan/Gemini-Pilot&type=date&legend=top-left&sealed_token=u8PEe8z97r5WS72xkJmcJu4WmKyXkpl3f_r4vVzmtDgYpv37tkD7GkKy6baQCvEVk5BpxsgZwA4R3d9u87o-WnlVFHYbBsdehaN3gY3H1rBXaPVyCwZBOg" />
+ </picture>
 </a>
 
 *感谢您为 Gemini Pilot 点亮 Star！您的支持是本项目持续迭代的最大动力。*
