@@ -45,8 +45,7 @@ GeminiTrace/
 │   ├── icon-32.png
 │   ├── icon-48.png
 │   └── icon-128.png
-├── README.md                  # User-facing documentation
-└── walkthrough.md             # Comprehensive user & feature walkthrough guide
+└── README.md                  # User-facing documentation
 ```
 
 ---

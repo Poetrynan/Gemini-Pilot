@@ -198,7 +198,6 @@ Gemini Pilot/
 ├── BUGFIXES.md            # Comprehensive bugfix & changelog log
 ├── TECHNICAL_GUIDE.md     # Developer guide & technical architecture specifications
 ├── PROGRESS.md            # Feature completion progress & performance milestones
-└── walkthrough.md         # Comprehensive feature walkthrough guide
 ```
 
 ---

@@ -158,7 +158,6 @@ Gemini Pilot/
 ├── BUGFIXES.md            # Bug 修复日志与 Changelog
 ├── TECHNICAL_GUIDE.md     # 开发者架构与技术原理指南
 ├── PROGRESS.md            # 功能完成度与里程碑记录
-└── walkthrough.md         # 详细功能演练指南
 ```
 
 ---
