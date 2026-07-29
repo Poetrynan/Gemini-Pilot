@@ -1405,13 +1405,27 @@
     if (menuInjectGuard) return;
     if (window.GTBatchDelete && window.GTBatchDelete.isActive && window.GTBatchDelete.isActive()) return;
 
+    // Remove any stray custom menu items that got injected into dialog modals
+    document.querySelectorAll('[role="dialog"] .gt-native-menu-item, mat-dialog-container .gt-native-menu-item, .mat-mdc-dialog-container .gt-native-menu-item, .mat-mdc-dialog-surface .gt-native-menu-item').forEach((el) => el.remove());
+
     let rawMenus = Array.from(document.querySelectorAll(
-      '[role="menu"], .mat-mdc-menu-panel, .cdk-overlay-pane, mat-menu-content'
+      '[role="menu"], .mat-mdc-menu-panel, mat-menu-content'
     ));
     if (!rawMenus.length) return;
 
+    const isDialogNode = (node) => {
+      if (!node) return false;
+      if (node.getAttribute && (node.getAttribute('role') === 'dialog' || node.getAttribute('aria-modal') === 'true')) return true;
+      if (node.classList && (node.classList.contains('mat-mdc-dialog-container') || node.classList.contains('mat-dialog-container') || node.classList.contains('mat-mdc-dialog-surface'))) return true;
+      if (node.closest && node.closest('[role="dialog"], mat-dialog-container, .mat-mdc-dialog-container, .mat-mdc-dialog-surface, [aria-modal="true"]')) return true;
+      if (node.querySelector && node.querySelector('[role="dialog"], mat-dialog-container, .mat-mdc-dialog-container, .mat-mdc-dialog-surface')) return true;
+      return false;
+    };
+
     const menus = rawMenus.filter((m) => {
-      if (m.classList.contains('cdk-overlay-pane') || m.tagName.toLowerCase() === 'mat-menu-content') {
+      if (!m) return false;
+      if (isDialogNode(m)) return false;
+      if (m.tagName.toLowerCase() === 'mat-menu-content') {
         const inner = m.querySelector('[role="menu"], .mat-mdc-menu-panel');
         if (inner) return false;
       }
