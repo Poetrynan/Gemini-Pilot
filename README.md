@@ -220,8 +220,6 @@ const CONFIG = {
 - **Zero Telemetry / Tracking**: No data is ever collected, logged, or transmitted to any remote server.
 - **Minimal Permissions**: Requests only `storage`, `activeTab`, and `scripting` permissions for local feature execution.
 
-
-
 ---
 
 ## 📜 License
