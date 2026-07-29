@@ -4,10 +4,11 @@
 
 **The Ultimate Productivity Suite for Google Gemini (`gemini.google.com`)**
 
+[![Stars](https://img.shields.io/github/stars/Poetrynan/Gemini-Pilot?style=for-the-badge&logo=github&color=EA4335)](https://github.com/Poetrynan/Gemini-Pilot/stargazers)
 [![Manifest V3](https://img.shields.io/badge/Manifest-V3-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white)](https://developer.chrome.com/docs/extensions/mv3/intro/)
 [![Browsers](https://img.shields.io/badge/Browsers-Chrome%20%7C%20Edge%20%7C%20Firefox-34A853?style=for-the-badge&logo=firefox&logoColor=white)](#-installation)
 [![License](https://img.shields.io/badge/License-MIT-FBBC05?style=for-the-badge)](LICENSE)
-[![Privacy](https://img.shields.io/badge/Privacy-100%25%20Local-EA4335?style=for-the-badge)](#-privacy--security)
+[![Privacy](https://img.shields.io/badge/Privacy-100%25%20Local-34A853?style=for-the-badge)](#-privacy--security)
 
 *Transform Google Gemini into a structured, high-performance AI workspace with single-session prompt outline navigation, native sidebar folder organization, multi-language bulk deletion, and 60fps Glassmorphism UI.*
 

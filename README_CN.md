@@ -4,10 +4,11 @@
 
 **Google Gemini (`gemini.google.com`) 终极效率增强工具箱**
 
+[![Stars](https://img.shields.io/github/stars/Poetrynan/Gemini-Pilot?style=for-the-badge&logo=github&color=EA4335)](https://github.com/Poetrynan/Gemini-Pilot/stargazers)
 [![Manifest V3](https://img.shields.io/badge/Manifest-V3-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white)](https://developer.chrome.com/docs/extensions/mv3/intro/)
 [![Browsers](https://img.shields.io/badge/Browsers-Chrome%20%7C%20Edge%20%7C%20Firefox-34A853?style=for-the-badge&logo=firefox&logoColor=white)](#-安装说明)
 [![License](https://img.shields.io/badge/License-MIT-FBBC05?style=for-the-badge)](LICENSE)
-[![Privacy](https://img.shields.io/badge/Privacy-100%25%20Local-EA4335?style=for-the-badge)](#-隐私与安全)
+[![Privacy](https://img.shields.io/badge/Privacy-100%25%20Local-34A853?style=for-the-badge)](#-隐私与安全)
 
 *将 Google Gemini 打造为高结构的 AI 工作空间，提供单会话 Prompt 大纲定位、原生侧边栏文件夹分组、多语言批量删除与 60fps 奶白毛玻璃 UI。*
 
