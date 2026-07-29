@@ -35,7 +35,7 @@
       </ul>
     </td>
     <td width="50%">
-      <h3>📁 Native Sidebar Folders (Approach A)</h3>
+      <h3>📁 Native Sidebar Folders</h3>
       <ul>
         <li><b>Top-of-Sidebar Injection</b>: Self-contained <code>#gt-folders-section</code> inserted at the top of Gemini's sidebar without reordering native DOM elements.</li>
         <li><b>Drag & Drop</b>: Drag any native chat row onto a folder to file it instantly.</li>

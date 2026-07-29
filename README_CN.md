@@ -35,7 +35,7 @@
       </ul>
     </td>
     <td width="50%">
-      <h3>📁 原生侧边栏文件夹分组 (Approach A)</h3>
+      <h3>📁 原生侧边栏文件夹分组</h3>
       <ul>
         <li><b>侧边栏顶部注入</b>：自包含 <code>#gt-folders-section</code> 区域，不打乱原生 DOM 排序。</li>
         <li><b>拖拽归档</b>：按住侧边栏任意原生对话拖放到文件夹即可瞬间归档。</li>
