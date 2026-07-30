@@ -200,11 +200,10 @@
 
 /* Header Actions Container */
 .gcn-header-actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  gap: 4px;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
 }
 
 /* Toggle Button - Minimal & Tactile */
@@ -218,14 +217,19 @@
   background: rgba(255, 255, 255, 0.5);
   border: 1px solid var(--gcn-glass-border);
   cursor: pointer;
-  padding: 6px;
+  padding: 0;
+  margin: 0;
   border-radius: 8px;
   color: var(--gcn-text-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  max-width: 28px !important;
+  box-sizing: border-box !important;
+  flex-shrink: 0 !important;
   transition:
     background var(--gcn-transition-fast),
     transform var(--gcn-transition-fast),
@@ -264,6 +268,7 @@
 .gcn-toggle-btn svg,
 .gcn-theme-btn svg {
   display: block;
+  transition: transform var(--gcn-transition-fast), opacity var(--gcn-transition-fast);
 }
 
 /* ======================== Message List ======================== */
@@ -387,6 +392,14 @@
 #gcn-panel[data-gcn-theme="dark"] .gcn-load-earlier-btn:hover {
   background: rgba(255, 255, 255, 0.12);
   color: #FFFFFF;
+}
+
+.gcn-spin {
+  animation: gcn-spin-anim 1s linear infinite;
+}
+@keyframes gcn-spin-anim {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 /* ======================== Nav Text ======================== */

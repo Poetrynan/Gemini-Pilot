@@ -104,12 +104,17 @@
     const btn = panelEl ? panelEl.querySelector('.gcn-theme-btn') : null;
     if (!btn) return;
 
+    const sunIcon = btn.querySelector('.gcn-icon-sun');
+    const moonIcon = btn.querySelector('.gcn-icon-moon');
+
     if (isDarkMode) {
-      btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="7" r="3"/><path d="M7 1v1.5M7 11.5V13M1 7h1.5M11.5 7H13M3 3l1 1M10 10l1 1M3 11l1-1M10 4l1-1"/></svg>`;
-      btn.title = 'Switch to light mode';
+      if (sunIcon) sunIcon.style.display = 'block';
+      if (moonIcon) moonIcon.style.display = 'none';
+      btn.title = 'Switch to light mode (Alt+T)';
     } else {
-      btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8.5A5.5 5.5 0 0 1 5.5 2 5.5 5.5 0 1 0 12 8.5z"/></svg>`;
-      btn.title = 'Switch to dark mode';
+      if (sunIcon) sunIcon.style.display = 'none';
+      if (moonIcon) moonIcon.style.display = 'block';
+      btn.title = 'Switch to dark mode (Alt+T)';
     }
   }
 
@@ -223,7 +228,10 @@
               <path d="M2 10v2a1 1 0 001 1h8a1 1 0 001-1v-2"/>
             </svg>
           </button>
-          <button class="gcn-theme-btn" title="Theme toggle (Alt+T)"></button>
+          <button class="gcn-theme-btn" title="Theme toggle (Alt+T)">
+            <svg class="gcn-icon-sun" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+            <svg class="gcn-icon-moon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: block;"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          </button>
           <button class="gcn-toggle-btn" title="Collapse/Expand (Alt+N)">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="gcn-toggle-icon">
               <path d="M4 6l4 4 4-4"/>
@@ -480,6 +488,8 @@
         `;
         loadBtn.addEventListener('click', (e) => {
           e.stopPropagation();
+          if (loadBtn.classList.contains('gcn-loading')) return;
+
           const msgs = getUserMessages();
           if (msgs.length === 0 || !msgs[0]) return;
 
@@ -487,21 +497,61 @@
           const container = getScrollContainer();
           const initialCount = msgs.length;
 
-          // Check if first message is already scrolled into view at top
+          // Determine if the user is ALREADY at the top message BEFORE triggering scroll
+          const scrollTop = container ? container.scrollTop : (window.scrollY || document.documentElement.scrollTop || 0);
           const rect = firstMsg.getBoundingClientRect();
-          const containerRect = container ? container.getBoundingClientRect() : { top: 0 };
-          const isAlreadyAtTop = container
-            ? (container.scrollTop <= 25 || Math.abs(rect.top - containerRect.top) <= 50)
-            : (rect.top <= 120);
+          const wasAlreadyAtTop = (scrollTop <= 30) || (rect.top >= 0 && rect.top <= 350);
 
+          // Scroll page to the top message
           firstMsg.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          if (container) container.scrollTop = 0;
 
-          setTimeout(() => {
+          // If user was NOT at top message (e.g. scrolled down reading later messages),
+          // scroll to top was executed to bring them to earlier messages — DO NOT show toast.
+          if (!wasAlreadyAtTop) {
+            return;
+          }
+
+          // If user WAS ALREADY at the top message, test if Gemini can fetch more history from Google servers.
+          // Show loading state on button while waiting for network / DOM lazy loading (2.0s polling window).
+          loadBtn.classList.add('gcn-loading');
+          loadBtn.innerHTML = `
+            <svg class="gcn-spin" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+            </svg>
+            <span>Loading earlier turns...</span>
+          `;
+
+          const restoreButton = () => {
+            loadBtn.classList.remove('gcn-loading');
+            loadBtn.innerHTML = `
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M8 12V4M4 8l4-4 4 4"/>
+              </svg>
+              <span>Load Earlier Turns</span>
+            `;
+          };
+
+          let elapsedTime = 0;
+          const checkInterval = setInterval(() => {
+            elapsedTime += 300;
             const currentMsgs = getUserMessages();
-            if (currentMsgs.length === initialCount && currentMsgs[0] === firstMsg && isAlreadyAtTop) {
+
+            // If new earlier messages arrived from Google server:
+            if (currentMsgs.length > initialCount) {
+              clearInterval(checkInterval);
+              restoreButton();
+              return;
+            }
+
+            // If 2000ms passed and ZERO new messages arrived: all history is 100% loaded!
+            if (elapsedTime >= 2000) {
+              clearInterval(checkInterval);
+              restoreButton();
+              // THIS IS TRULY THE VERY FIRST PROMPT OF THE ENTIRE CONVERSATION!
               showToast('Already at the first prompt');
             }
-          }, 600);
+          }, 300);
         });
         listContainer.insertBefore(loadBtn, listContainer.firstChild);
       }
