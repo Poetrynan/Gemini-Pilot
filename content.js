@@ -439,6 +439,25 @@
     updateLoadEarlierButton();
   }
 
+  function showToast(msg) {
+    if (!msg) return;
+    document.querySelectorAll('.gt-toast').forEach((el) => el.remove());
+    const theme = isDarkMode ? 'dark' : 'light';
+    const toast = document.createElement('div');
+    toast.className = 'gt-toast';
+    toast.setAttribute('data-gcn-theme', theme);
+    toast.setAttribute('data-gt-theme', theme);
+    const span = document.createElement('span');
+    span.textContent = msg;
+    toast.appendChild(span);
+    document.body.appendChild(toast);
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translate(-50%, 10px)';
+      setTimeout(() => toast.remove(), 300);
+    }, 2200);
+  }
+
   function updateLoadEarlierButton() {
     if (!listContainer) return;
     let loadBtn = listContainer.querySelector('.gcn-load-earlier-btn');
@@ -462,9 +481,27 @@
         loadBtn.addEventListener('click', (e) => {
           e.stopPropagation();
           const msgs = getUserMessages();
-          if (msgs.length > 0 && msgs[0]) {
-            msgs[0].scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }
+          if (msgs.length === 0 || !msgs[0]) return;
+
+          const firstMsg = msgs[0];
+          const container = getScrollContainer();
+          const initialCount = msgs.length;
+
+          // Check if first message is already scrolled into view at top
+          const rect = firstMsg.getBoundingClientRect();
+          const containerRect = container ? container.getBoundingClientRect() : { top: 0 };
+          const isAlreadyAtTop = container
+            ? (container.scrollTop <= 25 || Math.abs(rect.top - containerRect.top) <= 50)
+            : (rect.top <= 120);
+
+          firstMsg.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+          setTimeout(() => {
+            const currentMsgs = getUserMessages();
+            if (currentMsgs.length === initialCount && currentMsgs[0] === firstMsg && isAlreadyAtTop) {
+              showToast('Already at the first prompt / 已是第一条对话');
+            }
+          }, 600);
         });
         listContainer.insertBefore(loadBtn, listContainer.firstChild);
       }
