@@ -499,7 +499,7 @@
           setTimeout(() => {
             const currentMsgs = getUserMessages();
             if (currentMsgs.length === initialCount && currentMsgs[0] === firstMsg && isAlreadyAtTop) {
-              showToast('Already at the first prompt / 已是第一条对话');
+              showToast('Already at the first prompt');
             }
           }, 600);
         });
