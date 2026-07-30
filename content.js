@@ -1212,7 +1212,7 @@
 
     const debouncedUpdate = (window.GTUtils && typeof window.GTUtils.debounce === 'function')
       ? window.GTUtils.debounce(() => {
-          const prevLastMessage = userMessages[userMessages.length - 1];
+          const prevLastElement = (userMessages.length > 0 && userMessages[userMessages.length - 1]) ? userMessages[userMessages.length - 1].element : null;
           const prevCount = userMessages.length;
           const freshMessages = getUserMessages(true);
           renderMessageList();
@@ -1223,8 +1223,8 @@
           // Auto-scroll Gemini chat pane and Trace panel to the newest prompt ONLY when a NEW message was appended at the bottom.
           // If the last message did not change, it means older messages were prepended at the top (e.g. Load Earlier Turns), so DO NOT auto-scroll to bottom.
           if (prevCount > 0 && freshMessages.length > prevCount) {
-            const freshLastMessage = freshMessages[freshMessages.length - 1];
-            const isNewMessageAppended = freshLastMessage && freshLastMessage !== prevLastMessage;
+            const freshLastElement = freshMessages[freshMessages.length - 1];
+            const isNewMessageAppended = freshLastElement && freshLastElement !== prevLastElement;
 
             if (isNewMessageAppended) {
               const newIndex = freshMessages.length - 1;
