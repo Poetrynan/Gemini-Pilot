@@ -591,19 +591,36 @@ html[dark] .gt-native-menu-item:hover,
   bottom: 24px;
   left: 50%;
   transform: translateX(-50%);
+  border-radius: 20px;
+  padding: 8px 18px;
+  font-size: 13px;
+  font-weight: 500;
+  z-index: 999999;
+  transition: opacity 300ms ease, transform 300ms ease;
+  animation: gt-toast-in 300ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Light mode toast */
+.gt-toast[data-gcn-theme="light"],
+.gt-toast[data-gt-theme="light"] {
+  background: rgba(255, 255, 255, 0.94) !important;
+  color: #1F1F1F !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(128, 113, 91, 0.25) !important;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.14) !important;
+}
+
+/* Dark mode toast (default & explicit) */
+.gt-toast,
+.gt-toast[data-gcn-theme="dark"],
+.gt-toast[data-gt-theme="dark"] {
   background: rgba(28, 26, 24, 0.92);
   color: #FFFFFF;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(196, 169, 125, 0.4);
-  border-radius: 20px;
-  padding: 8px 18px;
-  font-size: 13px;
-  font-weight: 500;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
-  z-index: 999999;
-  transition: opacity 300ms ease, transform 300ms ease;
-  animation: gt-toast-in 300ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes gt-toast-in {
