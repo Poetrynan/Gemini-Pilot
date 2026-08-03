@@ -333,6 +333,7 @@
     // their original closure index and are updated in-place).
     item.addEventListener('click', (e) => {
       if (!e.target.closest('.gcn-copy-btn')) {
+        updateFocusedNavItem(idx);
         let target = userMessages[idx]?.element;
         if (!target || !document.body.contains(target)) {
           const freshMessages = getUserMessages(true);
@@ -1081,6 +1082,7 @@
     }, 300);
 
     updateActiveNavItem(index);
+    updateFocusedNavItem(index);
 
     // Reconnect observer after scroll ends
     waitForScrollEnd(() => {
@@ -1201,6 +1203,7 @@
             navItems.forEach((item, i) => {
               item.classList.toggle('gcn-active', i === idx);
             });
+            updateFocusedNavItem(idx);
           }
         }
       });
@@ -1396,6 +1399,11 @@
     if (navItems.length === 0) return;
 
     let nextIndex = focusedNavIndex;
+    if (nextIndex < 0 || nextIndex >= navItems.length) {
+      const activeIdx = navItems.findIndex(item => item.classList.contains('gcn-active'));
+      nextIndex = activeIdx !== -1 ? activeIdx : (delta > 0 ? -1 : 0);
+    }
+
     let attempts = 0;
     while (attempts < navItems.length) {
       nextIndex += delta;
