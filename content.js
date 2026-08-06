@@ -49,6 +49,9 @@
   let activeScrollCleanup = null;
   let exportMenuTimeout = null;
   let exportMenuClickListener = null;
+  let exportCancelFlag = false;
+  let isExporting = false;
+  let exportOverlayEl = null;
 
   // Nav items
   let navItems = [];
@@ -445,6 +448,13 @@
       userMessages.length = newLen;
     }
 
+    // Update top-right turn badge (always safe now — progress bar is on document.body, not in panel)
+    const badge = panelEl ? panelEl.querySelector('.gcn-turn-badge') : null;
+    if (badge) {
+      badge.textContent = `${newLen} Turns`;
+      badge.style.display = newLen > 0 ? 'inline-flex' : 'none';
+    }
+
     updateLoadEarlierButton();
   }
 
@@ -781,20 +791,102 @@
 
   // ======================== Export ========================
 
+  /**
+   * Convert Gemini response HTML node into clean, properly formatted Markdown.
+   * - Restores KaTeX / MathJax math formulas into $inline$ and $$block$$ LaTeX syntax
+   * - Preserves code blocks (```lang ... ```)
+   * - Converts HTML tables into Markdown tables (| ... |)
+   * - Strips UI toolbars, action buttons, and speaker labels
+   */
+  function convertGeminiElementToMarkdown(element) {
+    if (!element) return '';
+
+    const clone = element.cloneNode(true);
+
+    // 1. Strip UI controls (headers, buttons, copy buttons, toolbars, feedback controls)
+    clone.querySelectorAll('header, button, svg, [class*="header"], [class*="speaker"], [class*="title"], [class*="actions"], [class*="toolbar"], .code-block-decoration, .copy-code-button, response-element-actions').forEach(el => el.remove());
+
+    // 2. Convert display (block) math equations (.katex-display, math-tex[block], [data-math-type="block"])
+    clone.querySelectorAll('.katex-display, math-tex[block], [data-math-type="block"]').forEach(displayMathNode => {
+      let tex = '';
+      const annotation = displayMathNode.querySelector('annotation');
+      if (annotation && annotation.textContent.trim()) {
+        tex = annotation.textContent.trim();
+      } else if (displayMathNode.getAttribute('data-tex')) {
+        tex = displayMathNode.getAttribute('data-tex').trim();
+      } else if (displayMathNode.getAttribute('aria-label')) {
+        tex = displayMathNode.getAttribute('aria-label').trim();
+      } else {
+        tex = displayMathNode.textContent.trim();
+      }
+      
+      const mathTextNode = document.createTextNode(`\n\n$$\n${tex}\n$$\n\n`);
+      displayMathNode.parentNode.replaceChild(mathTextNode, displayMathNode);
+    });
+
+    // 3. Convert inline math equations (.katex, math-tex, [data-math-type="inline"])
+    clone.querySelectorAll('.katex, math-tex, [data-math-type="inline"]').forEach(inlineMathNode => {
+      let tex = '';
+      const annotation = inlineMathNode.querySelector('annotation');
+      if (annotation && annotation.textContent.trim()) {
+        tex = annotation.textContent.trim();
+      } else if (inlineMathNode.getAttribute('data-tex')) {
+        tex = inlineMathNode.getAttribute('data-tex').trim();
+      } else if (inlineMathNode.getAttribute('aria-label')) {
+        tex = inlineMathNode.getAttribute('aria-label').trim();
+      } else {
+        tex = inlineMathNode.textContent.trim();
+      }
+
+      const mathTextNode = document.createTextNode(` $${tex}$ `);
+      inlineMathNode.parentNode.replaceChild(mathTextNode, inlineMathNode);
+    });
+
+    // 4. Convert code blocks (<pre><code>)
+    clone.querySelectorAll('pre').forEach(preNode => {
+      const codeNode = preNode.querySelector('code');
+      const langClass = codeNode ? (codeNode.className || '') : '';
+      const langMatch = langClass.match(/language-([a-zA-Z0-9_+-]+)/);
+      const lang = langMatch ? langMatch[1] : '';
+      const codeText = codeNode ? codeNode.textContent : preNode.textContent;
+
+      const codeBlockNode = document.createTextNode(`\n\n\`\`\`${lang}\n${codeText.trim()}\n\`\`\`\n\n`);
+      preNode.parentNode.replaceChild(codeBlockNode, preNode);
+    });
+
+    // 5. Convert tables (<table>)
+    clone.querySelectorAll('table').forEach(tableNode => {
+      const rows = Array.from(tableNode.querySelectorAll('tr'));
+      if (rows.length === 0) return;
+
+      let mdTable = '\n\n';
+      rows.forEach((row, rowIndex) => {
+        const cells = Array.from(row.querySelectorAll('th, td')).map(c => c.textContent.trim().replace(/\|/g, '\\|'));
+        mdTable += '| ' + cells.join(' | ') + ' |\n';
+        if (rowIndex === 0) {
+          mdTable += '| ' + cells.map(() => '---').join(' | ') + ' |\n';
+        }
+      });
+      mdTable += '\n';
+
+      const tableTextNode = document.createTextNode(mdTable);
+      tableNode.parentNode.replaceChild(tableTextNode, tableNode);
+    });
+
+    // Extract text from modified clone
+    let result = clone.innerText || clone.textContent || '';
+
+    // Clean up excessive blank lines (more than 2 consecutive newlines)
+    result = result.replace(/\n{3,}/g, '\n\n').trim();
+
+    return result;
+  }
+
   function extractResponseText(respNode) {
     if (!respNode) return '';
 
-    // Intelligent DOM selector matching: Target the exact response body container node,
-    // skipping any sibling speaker labels, headers, or action toolbar elements (matching how extractUserText works).
-    const bodyEl = respNode.querySelector('.markdown, message-content, .message-content, [class*="markdown"], [class*="message-content"]');
-    if (bodyEl) {
-      return (bodyEl.innerText || bodyEl.textContent || '').trim();
-    }
-
-    // Intelligent DOM tree cleaning fallback: Clone node and strip header/toolbar/speaker nodes
-    const clone = respNode.cloneNode(true);
-    clone.querySelectorAll('header, button, svg, [class*="header"], [class*="speaker"], [class*="title"], [class*="actions"], [class*="toolbar"]').forEach(el => el.remove());
-    return (clone.innerText || clone.textContent || '').trim();
+    const bodyEl = respNode.querySelector('.markdown, message-content, .message-content, [class*="markdown"], [class*="message-content"]') || respNode;
+    return convertGeminiElementToMarkdown(bodyEl);
   }
 
   function getConversationData() {
@@ -874,41 +966,13 @@
   }
 
   function exportAsMarkdown() {
-    const data = getConversationData();
-    let md = '# Gemini Chat Export\n\n';
-    md += `> Exported on ${new Date().toLocaleString()}\n\n`;
-    md += `---\n\n`;
-
-    data.forEach(item => {
-      md += `## Turn ${item.index}\n\n`;
-      md += `**User:**\n${item.text}\n\n`;
-      if (item.images.length > 0) {
-        item.images.forEach((img, i) => {
-          md += `![Image ${i + 1}](${img})\n\n`;
-        });
-      }
-      if (item.response) {
-        md += `**Gemini:**\n${item.response}\n\n`;
-      }
-      md += `---\n\n`;
-    });
-
-    downloadFile(md, 'gemini-chat.md', 'text/markdown');
     hideExportMenu();
+    collectFullConversation('md');
   }
 
   function exportAsJSON() {
-    const data = getConversationData();
-    const exportData = {
-      title: 'Gemini Chat Export',
-      exportedAt: new Date().toISOString(),
-      messageCount: data.length,
-      messages: data
-    };
-
-    const json = JSON.stringify(exportData, null, 2);
-    downloadFile(json, 'gemini-chat.json', 'application/json');
     hideExportMenu();
+    collectFullConversation('json');
   }
 
   function downloadFile(content, filename, mimeType) {
@@ -988,6 +1052,533 @@
         document.addEventListener('click', exportMenuClickListener, { once: true });
       }
     }, 100);
+  }
+
+  // ======================== Full Conversation Export (Auto-Scroll Collection) ========================
+
+  /**
+   * Extract all currently visible user-query + model-response pairs from the DOM
+   * in exact top-to-bottom order.
+   */
+  function getVisibleDOMTurns() {
+    const messages = getUserMessages(true);
+    const result = [];
+
+    messages.forEach((msg) => {
+      // Extract full user text
+      const textLines = msg.querySelectorAll('.query-text-line');
+      let userText = '';
+      textLines.forEach(line => {
+        const cls = line.className || '';
+        if (/cdk-visually-hidden|screen-reader/i.test(cls)) return;
+        userText += line.textContent.trim() + '\n';
+      });
+      userText = userText.trim();
+      if (window.GTUtils && typeof window.GTUtils.cleanText === 'function') {
+        userText = window.GTUtils.cleanText(userText);
+      }
+
+      // Extract uploaded user images
+      const images = [];
+      const imgElements = msg.querySelectorAll('img[data-test-id="uploaded-img"], .preview-image');
+      imgElements.forEach(img => {
+        if (img.src && !img.src.startsWith('data:')) {
+          images.push(img.src);
+        }
+      });
+
+      // Extract corresponding AI model response
+      let responseText = '';
+      let respNode = null;
+
+      // 1. Check if msg is inside a dedicated turn wrapper containing model-response
+      let parent = msg.parentElement;
+      while (parent && parent !== document.body) {
+        if (parent.querySelectorAll(SELECTORS.USER_QUERY).length > 1) break;
+        const found = parent.querySelector('model-response');
+        if (found) { respNode = found; break; }
+        parent = parent.parentElement;
+      }
+
+      // 2. If no dedicated turn wrapper, search adjacent siblings
+      if (!respNode) {
+        let curr = msg;
+        while (curr && curr !== document.body && !respNode) {
+          let sibling = curr.nextElementSibling;
+          while (sibling) {
+            if (sibling.matches?.(SELECTORS.USER_QUERY) || sibling.querySelector?.(SELECTORS.USER_QUERY)) break;
+            if (sibling.tagName && sibling.tagName.toLowerCase() === 'model-response') {
+              respNode = sibling;
+              break;
+            }
+            const found = sibling.querySelector?.('model-response');
+            if (found) { respNode = found; break; }
+            sibling = sibling.nextElementSibling;
+          }
+          if (respNode) break;
+          curr = curr.parentElement;
+        }
+      }
+
+      if (respNode) {
+        responseText = extractResponseText(respNode);
+      }
+
+      if (userText || responseText) {
+        result.push({
+          userText,
+          responseText,
+          images,
+          timestamp: Date.now()
+        });
+      }
+    });
+
+    return result;
+  }
+
+  /**
+   * Sequence Alignment Engine:
+   * Merges visible DOM turns into collectedTurns (maintained in chronological order: Turn 1..Turn N).
+   * Finds sequence overlap where trailing elements of visibleTurns align with leading elements of collectedTurns,
+   * prepending only genuinely new turns above collectedTurns[0], while enriching response text on overlapping turns.
+   */
+  function mergeSequenceTurns(collectedTurns, visibleTurns) {
+    if (!visibleTurns || visibleTurns.length === 0) return 0;
+
+    if (collectedTurns.length === 0) {
+      collectedTurns.push(...visibleTurns);
+      return visibleTurns.length;
+    }
+
+    function turnsMatch(v, c) {
+      if (!v || !c) return false;
+      if (v.userText && c.userText && v.userText === c.userText) {
+        return true;
+      }
+      if (!v.userText && !c.userText && v.responseText && c.responseText) {
+        return v.responseText.substring(0, 50) === c.responseText.substring(0, 50);
+      }
+      return false;
+    }
+
+    // Find the overlap index in visibleTurns that aligns with collectedTurns[0]
+    let overlapIdx = -1;
+    for (let i = visibleTurns.length - 1; i >= 0; i--) {
+      if (turnsMatch(visibleTurns[i], collectedTurns[0])) {
+        overlapIdx = i;
+        break;
+      }
+    }
+
+    let addedCount = 0;
+
+    if (overlapIdx >= 0) {
+      const newItems = visibleTurns.slice(0, overlapIdx);
+      if (newItems.length > 0) {
+        collectedTurns.unshift(...newItems);
+        addedCount = newItems.length;
+      }
+
+      // Enrich overlapping items with fuller AI responses if available
+      for (let i = overlapIdx; i < visibleTurns.length; i++) {
+        const targetIdx = i - overlapIdx;
+        if (targetIdx < collectedTurns.length) {
+          const v = visibleTurns[i];
+          const c = collectedTurns[targetIdx];
+          if (v.responseText && v.responseText.length > (c.responseText ? c.responseText.length : 0)) {
+            c.responseText = v.responseText;
+          }
+          if (v.images && v.images.length > (c.images ? c.images.length : 0)) {
+            c.images = v.images;
+          }
+        }
+      }
+    } else {
+      // Fallback: search for any overlap with collectedTurns
+      let matchedVisibleIdx = -1;
+      let matchedCollectedIdx = -1;
+
+      for (let i = 0; i < visibleTurns.length; i++) {
+        for (let j = 0; j < collectedTurns.length; j++) {
+          if (turnsMatch(visibleTurns[i], collectedTurns[j])) {
+            matchedVisibleIdx = i;
+            matchedCollectedIdx = j;
+            break;
+          }
+        }
+        if (matchedVisibleIdx >= 0) break;
+      }
+
+      if (matchedVisibleIdx >= 0 && matchedCollectedIdx >= 0) {
+        const newItems = visibleTurns.slice(0, matchedVisibleIdx);
+        if (newItems.length > 0) {
+          collectedTurns.splice(matchedCollectedIdx, 0, ...newItems);
+          addedCount = newItems.length;
+        }
+      }
+    }
+
+    return addedCount;
+  }
+
+  /**
+   * Show a premium persistent fixed-position progress bar at screen bottom center.
+   * Features: animated shimmer stripe, cycling status text, cancel button.
+   */
+  function showExportProgressOverlay() {
+    hideExportProgressOverlay();
+
+    isExporting = true;
+
+    const theme = isDarkMode ? 'dark' : 'light';
+    const bar = document.createElement('div');
+    bar.id = 'gcn-export-progress-bar';
+    bar.className = 'gcn-export-progress-bar';
+    bar.setAttribute('data-gcn-theme', theme);
+    bar.innerHTML = `
+      <div class="gcn-export-bar-left">
+        <div class="gcn-export-bar-dots">
+          <span class="gcn-dot"></span><span class="gcn-dot"></span><span class="gcn-dot"></span>
+        </div>
+        <span class="gcn-export-bar-text">Loading conversation history...</span>
+      </div>
+      <button class="gcn-export-bar-cancel" title="Cancel export">&times;</button>
+      <div class="gcn-export-bar-shimmer"></div>
+    `;
+
+    document.body.appendChild(bar);
+    exportModalEl = bar;
+
+    // Cancel button
+    bar.querySelector('.gcn-export-bar-cancel').addEventListener('click', (e) => {
+      e.stopPropagation();
+      exportCancelFlag = true;
+    });
+  }
+
+  /**
+   * Update dynamic status text in the persistent bottom progress bar.
+   */
+  function updateExportProgressOverlay(text) {
+    if (!exportModalEl || !isExporting) return;
+    const textEl = exportModalEl.querySelector('.gcn-export-bar-text');
+    if (textEl && text) {
+      textEl.textContent = text;
+    }
+  }
+
+  /**
+   * Remove the persistent bottom progress bar with a smooth exit animation.
+   */
+  function hideExportProgressOverlay() {
+    isExporting = false;
+
+    if (exportModalEl) {
+      exportModalEl.style.opacity = '0';
+      exportModalEl.style.transform = 'translateX(-50%) translateY(10px)';
+      const el = exportModalEl;
+      setTimeout(() => el.remove(), 300);
+      exportModalEl = null;
+    }
+    // Fallback cleanup
+    const existing = document.getElementById('gcn-export-progress-bar');
+    if (existing) existing.remove();
+    const oldBar = document.getElementById('gcn-panel-export-bar');
+    if (oldBar) oldBar.remove();
+  }
+
+  /**
+   * Find Gemini's scrollable chat container using scoring system.
+   * Returns the element that actually has overflow scroll behavior.
+   */
+  function findGeminiScrollContainer() {
+    const candidates = [
+      '.chat-scrollable-container',
+      '.chat-history-scroll-container',
+      '[data-test-id="chat-history-container"]',
+      '.chat-history',
+      '#chat-history',
+      'mat-sidenav-content',
+      'main',
+    ];
+
+    let best = null;
+    let bestScore = -1;
+
+    for (const sel of candidates) {
+      const el = document.querySelector(sel);
+      if (!el) continue;
+      if (el.scrollHeight <= el.clientHeight) continue;
+
+      let score = 0;
+      // Higher scrollHeight delta = more likely the real container
+      score += (el.scrollHeight - el.clientHeight) / 1000;
+      // Contains chat markers
+      if (el.querySelector('user-query, USER-QUERY, model-response')) score += 10;
+      // Covers most of viewport
+      const rect = el.getBoundingClientRect();
+      const vhCoverage = (rect.height / window.innerHeight);
+      if (vhCoverage > 0.5) score += 5;
+      // Has overflowY auto/scroll
+      const style = getComputedStyle(el);
+      if (style.overflowY === 'auto' || style.overflowY === 'scroll') score += 15;
+
+      if (score > bestScore) {
+        bestScore = score;
+        best = el;
+      }
+    }
+
+    return best;
+  }
+
+  /**
+   * Scroll jiggle: repeatedly set scrollTop to trigger Gemini's lazy loading.
+   * A single scroll is often insufficient — Gemini needs multiple "nudges".
+   */
+  function scrollJiggle(container, targetTop, times = 3) {
+    for (let i = 0; i < times; i++) {
+      container.scrollTop = targetTop;
+      container.dispatchEvent(new Event('scroll', { bubbles: true }));
+    }
+  }
+
+  /**
+   * Click any "Load More" / "Show More" buttons that Gemini may render.
+   */
+  function clickLoadMoreButtons() {
+    const buttons = document.querySelectorAll('button, [role="button"], a, span, div');
+    const moreRegex = /more|load|show|加载|更多|展开|previous|earlier/i;
+    for (const btn of buttons) {
+      const text = (btn.textContent || '').trim();
+      if (moreRegex.test(text) && btn.offsetParent !== null) {
+        btn.click();
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Core async auto-scroll collection engine.
+   * Phase 1: Smoothly scrolls up to force Gemini to load all conversation nodes into the DOM.
+   * Phase 2: Performs a single, one-pass scrape over document.querySelectorAll(SELECTORS.USER_QUERY),
+   * guaranteeing an exact 1-to-1 match with the DOM (0 duplicates, 0 missing).
+   */
+  async function collectFullConversation(format) {
+    exportCancelFlag = false;
+    showExportProgressOverlay();
+
+    // Dynamic Watchdog Timer: resets whenever new DOM nodes arrive,
+    // allowing ultra-long conversations (300+ turns) to complete fully,
+    // while guarding against true freezes (60s without new node arrivals).
+    let safetyTimer = null;
+    const resetSafetyTimer = () => {
+      if (safetyTimer) clearTimeout(safetyTimer);
+      safetyTimer = setTimeout(() => {
+        if (exportModalEl) {
+          exportCancelFlag = true;
+        }
+      }, 60000);
+    };
+    resetSafetyTimer();
+
+    // Find the real scroll container
+    const container = findGeminiScrollContainer();
+    if (!container) {
+      hideExportProgressOverlay();
+      showToast('Error: Could not find chat scroll container');
+      if (safetyTimer) clearTimeout(safetyTimer);
+      return;
+    }
+
+    // Save initial scroll position for restoration
+    const initialScrollTop = container.scrollTop;
+
+    // --- PHASE 1: Scroll up to force Gemini to load all conversation turns into the DOM ---
+    let lastDomCount = 0;
+    let sameCountRounds = 0;
+
+    while (sameCountRounds < 4 && !exportCancelFlag) {
+      const currentNodes = document.querySelectorAll(SELECTORS.USER_QUERY);
+      const currentCount = currentNodes.length;
+      updateExportProgressOverlay('Loading conversation history...');
+
+      if (currentCount > lastDomCount) {
+        lastDomCount = currentCount;
+        sameCountRounds = 0;
+        resetSafetyTimer(); // Active progress: reset watchdog timer!
+      } else {
+        sameCountRounds++;
+      }
+
+      if (currentNodes.length > 0) {
+        const firstMsg = currentNodes[0];
+        firstMsg.scrollIntoView({ behavior: 'instant', block: 'start' });
+      }
+      container.scrollTop = 0;
+      container.dispatchEvent(new Event('scroll', { bubbles: true }));
+      clickLoadMoreButtons();
+
+      await new Promise(r => setTimeout(r, 800));
+    }
+
+    // --- PHASE 2: One-Pass Scrape over the exact DOM nodes (0 duplicates, 0 missing) ---
+    const finalUserNodes = document.querySelectorAll(SELECTORS.USER_QUERY);
+    const collectedTurns = [];
+
+    for (let i = 0; i < finalUserNodes.length; i++) {
+      if (exportCancelFlag) break;
+
+      const msgNode = finalUserNodes[i];
+
+      // Extract user text
+      const textLines = msgNode.querySelectorAll('.query-text-line');
+      let userText = '';
+      textLines.forEach(line => {
+        const cls = line.className || '';
+        if (/cdk-visually-hidden|screen-reader/i.test(cls)) return;
+        userText += line.textContent.trim() + '\n';
+      });
+      userText = userText.trim();
+      if (window.GTUtils && typeof window.GTUtils.cleanText === 'function') {
+        userText = window.GTUtils.cleanText(userText);
+      }
+
+      // Extract uploaded user images
+      const images = [];
+      const imgElements = msgNode.querySelectorAll('img[data-test-id="uploaded-img"], .preview-image');
+      imgElements.forEach(img => {
+        if (img.src && !img.src.startsWith('data:')) {
+          images.push(img.src);
+        }
+      });
+
+      // Extract corresponding AI model response
+      let responseText = '';
+      let respNode = null;
+
+      let parent = msgNode.parentElement;
+      while (parent && parent !== document.body && parent !== container) {
+        if (parent.querySelectorAll(SELECTORS.USER_QUERY).length > 1) break;
+        const found = parent.querySelector('model-response');
+        if (found) { respNode = found; break; }
+        parent = parent.parentElement;
+      }
+
+      if (!respNode) {
+        let curr = msgNode;
+        while (curr && curr !== document.body && curr !== container && !respNode) {
+          let sibling = curr.nextElementSibling;
+          while (sibling) {
+            if (sibling.matches?.(SELECTORS.USER_QUERY) || sibling.querySelector?.(SELECTORS.USER_QUERY)) break;
+            if (sibling.tagName && sibling.tagName.toLowerCase() === 'model-response') {
+              respNode = sibling;
+              break;
+            }
+            const found = sibling.querySelector?.('model-response');
+            if (found) { respNode = found; break; }
+            sibling = sibling.nextElementSibling;
+          }
+          if (respNode) break;
+          curr = curr.parentElement;
+        }
+      }
+
+      if (respNode) {
+        responseText = extractResponseText(respNode);
+      }
+
+      collectedTurns.push({
+        userText,
+        responseText,
+        images,
+        timestamp: Date.now()
+      });
+    }
+
+    if (exportCancelFlag && collectedTurns.length === 0) {
+      hideExportProgressOverlay();
+      showToast('Export cancelled');
+      if (safetyTimer) clearTimeout(safetyTimer);
+      return;
+    }
+
+    if (collectedTurns.length === 0) {
+      hideExportProgressOverlay();
+      showToast('No conversation turns found');
+      if (safetyTimer) clearTimeout(safetyTimer);
+      return;
+    }
+
+    // Restore original scroll position
+    scrollJiggle(container, initialScrollTop, 3);
+
+    if (safetyTimer) clearTimeout(safetyTimer);
+    hideExportProgressOverlay();
+
+    // ALWAYS TRIGGER DOWNLOAD: generate file whenever collectedTurns > 0
+    if (format === 'md') {
+      generateMarkdownExport(collectedTurns);
+    } else {
+      generateJsonExport(collectedTurns);
+    }
+
+    showToast(`Export complete: ${collectedTurns.length} turns saved`);
+  }
+
+  /**
+   * Export Modal — shows spinner and cancel button for standard user UI.
+   */
+  let exportModalEl = null;
+
+  /**
+   * Generate Markdown file content from collected turns and trigger download.
+   */
+  function generateMarkdownExport(turns) {
+    let md = '# Gemini Chat Export\n\n';
+    md += `> Exported on ${new Date().toLocaleString()}\n\n`;
+    md += `---\n\n`;
+
+    turns.forEach((turn, idx) => {
+      md += `## Turn ${idx + 1}\n\n`;
+      md += `**User:**\n${turn.userText}\n\n`;
+      if (turn.images && turn.images.length > 0) {
+        turn.images.forEach((img, i) => {
+          md += `![Image ${i + 1}](${img})\n\n`;
+        });
+      }
+      if (turn.responseText) {
+        md += `**Gemini:**\n${turn.responseText}\n\n`;
+      }
+      md += `---\n\n`;
+    });
+
+    downloadFile(md, 'gemini-chat.md', 'text/markdown');
+  }
+
+  /**
+   * Generate JSON file content from collected turns and trigger download.
+   */
+  function generateJsonExport(turns) {
+    const messages = turns.map((turn, idx) => ({
+      index: idx + 1,
+      role: 'user',
+      text: turn.userText,
+      images: turn.images || [],
+      response: turn.responseText
+    }));
+
+    const exportData = {
+      title: 'Gemini Chat Export',
+      exportedAt: new Date().toISOString(),
+      messageCount: messages.length,
+      messages: messages
+    };
+
+    const json = JSON.stringify(exportData, null, 2);
+    downloadFile(json, 'gemini-chat.json', 'application/json');
   }
 
   // ======================== Search & Filter ========================

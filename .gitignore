@@ -4,6 +4,7 @@ PROGRESS.md
 HOW_IT_WORKS.md
 TECHNICAL_GUIDE.md
 ORIGINAL_REQUEST.md
+EXPORT_DEBUG_NOTES.md
 
 # ======================== Security & Extension Credentials ========================
 # Private keys, certificates, and packed extensions must NEVER be committed to Git!
@@ -38,3 +39,6 @@ Thumbs.db
 .zcode/
 reference/
 test_*.js
+*.debug_backup.js
+content.debug_backup.js
+
