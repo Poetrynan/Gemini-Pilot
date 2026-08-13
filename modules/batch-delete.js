@@ -236,7 +236,8 @@
       hideStyle = document.createElement('style');
       hideStyle.id = 'gt-hide-batch-menus';
       hideStyle.textContent = `
-        .cdk-overlay-container, [role="menu"], .mat-mdc-menu-panel, .cdk-overlay-pane {
+        .cdk-overlay-container, [role="menu"], .mat-mdc-menu-panel, .cdk-overlay-pane,
+        [role="dialog"], .cdk-overlay-backdrop, .mat-mdc-dialog-container {
           opacity: 0 !important;
           pointer-events: auto !important;
           transition: none !important;
@@ -279,10 +280,52 @@
 
       showResultDialog(deleted, failed);
     } finally {
+      // Dismiss all lingering Gemini-native overlay menus, dialogs, and backdrops
+      // BEFORE removing the hiding CSS, so they don't flash on screen.
+      dismissAllOverlays();
+      // Small delay to let Gemini's own close animations settle
+      await delay(200);
       document.getElementById('gt-hide-batch-menus')?.remove();
       isDeleting = false;
       exitBatchMode();
     }
+  }
+
+  /**
+   * Dismiss all lingering Gemini-native overlay popups, menus, dialogs and backdrops.
+   * Called after batch delete loop ends, before removing the opacity-hiding CSS,
+   * to prevent context menus and "Delete chat?" dialogs from flashing on screen.
+   */
+  function dismissAllOverlays() {
+    // 1. Press Escape to close any focused dialog/menu via Angular's CDK
+    document.body.dispatchEvent(new KeyboardEvent('keydown', {
+      key: 'Escape', code: 'Escape', keyCode: 27, bubbles: true, cancelable: true
+    }));
+
+    // 2. Click any visible backdrop overlays to dismiss them
+    document.querySelectorAll('.cdk-overlay-backdrop').forEach(backdrop => {
+      if (backdrop.offsetWidth > 0 || backdrop.offsetHeight > 0) {
+        backdrop.click();
+      }
+    });
+
+    // 3. Remove overlay panes that contain menus or dialogs
+    document.querySelectorAll('.cdk-overlay-pane').forEach(pane => {
+      const hasMenu = pane.querySelector('[role="menu"], .mat-mdc-menu-panel');
+      const hasDialog = pane.querySelector('[role="dialog"], .mat-mdc-dialog-container');
+      if (hasMenu || hasDialog) {
+        pane.remove();
+      }
+    });
+
+    // 4. Remove standalone menu panels and dialog containers
+    document.querySelectorAll(
+      '[role="menu"], .mat-mdc-menu-panel, [role="dialog"].cdk-overlay-pane'
+    ).forEach(el => {
+      // Don't remove our own GT dialogs
+      if (el.closest('.gt-dialog-overlay')) return;
+      el.remove();
+    });
   }
 
   async function deleteConversation(conv) {
@@ -344,7 +387,18 @@
     if (!confirmBtn) throw new Error('Confirm button not found');
 
     confirmBtn.click();
-    await delay(600);
+
+    // Wait for Gemini's confirmation dialog/overlay to actually close (up to 3s),
+    // rather than a fixed delay that may be too short.
+    const confirmDialog = confirmBtn.closest('.cdk-overlay-pane, [role="dialog"], .mat-mdc-dialog-container');
+    if (confirmDialog) {
+      await waitFor(() => !document.body.contains(confirmDialog) || !isVisible(confirmDialog), 3000, 150).catch(() => {});
+    }
+    await delay(400);
+
+    // Dismiss any lingering menus/dialogs from this iteration before moving to the next
+    dismissAllOverlays();
+    await delay(200);
   }
 
   // ======================== Dialogs ========================
