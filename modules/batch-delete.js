@@ -15,6 +15,7 @@
   let mutationObserver = null;
   let debounceTimer = null;
   let cachedBarElements = null;
+  let activeSidebar = null;
 
   // ======================== Robust DOM Finder ========================
 
@@ -56,7 +57,9 @@
 
   function getConversationId(conv) {
     if (!conv) return 'conv_default';
-    const link = conv.querySelector('a[href*="/app/"]') || conv;
+    const link = conv.querySelector('a[href*="/app/"]') ||
+                 (conv.matches && conv.matches('a[href*="/app/"]') ? conv : null) ||
+                 (conv.closest && conv.closest('a[href*="/app/"]')) || conv;
     const href = link.getAttribute('href') || link.dataset?.testId || link.getAttribute('data-test-id') || '';
     if (window.GTUtils && typeof window.GTUtils.getConversationIdFromHref === 'function') {
       const id = window.GTUtils.getConversationIdFromHref(href);
@@ -115,31 +118,53 @@
   }
 
   function injectCheckboxes() {
+    if (!isDeleteMode) return;
     const conversations = getConversationItems();
 
     conversations.forEach((conv, idx) => {
-      if (conv.querySelector('.gt-conv-checkbox')) return;
+      const convId = getConversationId(conv);
+      const isSelected = selectedConversations.has(convId);
+      let checkbox = conv.querySelector('.gt-conv-checkbox');
 
-      const checkbox = document.createElement('input');
-      checkbox.type = 'checkbox';
-      checkbox.className = 'gt-conv-checkbox';
+      if (!checkbox) {
+        checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.className = 'gt-conv-checkbox';
+
+        checkbox.addEventListener('change', (e) => {
+          e.stopPropagation();
+          handleCheckboxChange(conv, checkbox, e);
+        });
+
+        checkbox.addEventListener('click', (e) => {
+          e.stopPropagation();
+        });
+
+        conv.style.position = 'relative';
+        conv.style.display = 'flex';
+        conv.style.alignItems = 'center';
+        conv.style.paddingLeft = '36px';
+        conv.insertBefore(checkbox, conv.firstChild);
+      } else {
+        if (conv.style.paddingLeft !== '36px') {
+          conv.style.position = 'relative';
+          conv.style.display = 'flex';
+          conv.style.alignItems = 'center';
+          conv.style.paddingLeft = '36px';
+        }
+      }
+
       checkbox.dataset.index = idx.toString();
+      checkbox.checked = isSelected;
 
-      checkbox.addEventListener('change', (e) => {
-        e.stopPropagation();
-        handleCheckboxChange(conv, checkbox, e);
-      });
-
-      checkbox.addEventListener('click', (e) => {
-        e.stopPropagation();
-      });
-
-      conv.style.position = 'relative';
-      conv.style.display = 'flex';
-      conv.style.alignItems = 'center';
-      conv.style.paddingLeft = '36px';
-      conv.insertBefore(checkbox, conv.firstChild);
+      if (isSelected) {
+        conv.classList.add('gt-conv-selected');
+      } else {
+        conv.classList.remove('gt-conv-selected');
+      }
     });
+
+    updateCount();
   }
 
   function handleCheckboxChange(conv, checkbox, event) {
@@ -185,8 +210,9 @@
 
   function toggleSelectAll() {
     const checkboxes = Array.from(document.querySelectorAll('.gt-conv-checkbox'));
-    const totalCount = checkboxes.length;
-    const allChecked = selectedConversations.size === totalCount && totalCount > 0;
+    if (checkboxes.length === 0) return;
+
+    const allChecked = checkboxes.every(cb => cb.checked);
 
     checkboxes.forEach(cb => {
       const conv = cb.parentElement;
@@ -210,12 +236,14 @@
     const countEl = cachedBarElements?.countEl || document.getElementById('gt-selected-count');
     const deleteBtn = cachedBarElements?.deleteBtn || document.querySelector('.gt-batch-bar-delete');
     const selectAllBtn = cachedBarElements?.selectAllBtn || document.querySelector('#gt-select-all-btn');
-    const totalCount = document.querySelectorAll('.gt-conv-checkbox').length;
+    const checkboxes = document.querySelectorAll('.gt-conv-checkbox');
+    const totalCount = checkboxes.length;
+    const allChecked = totalCount > 0 && Array.from(checkboxes).every(cb => cb.checked);
 
     if (countEl) countEl.textContent = selectedConversations.size.toString();
     if (deleteBtn) deleteBtn.disabled = selectedConversations.size === 0 || isDeleting;
     if (selectAllBtn) {
-      selectAllBtn.textContent = selectedConversations.size === totalCount && totalCount > 0 ? 'Deselect All' : 'Select All';
+      selectAllBtn.textContent = allChecked ? 'Deselect All' : 'Select All';
     }
   }
 
@@ -247,35 +275,44 @@
     }
 
     try {
-      const conversations = getConversationItems();
-      const toDelete = conversations.filter(conv => {
-        const id = getConversationId(conv);
-        return selectedConversations.has(id);
-      });
-
+      const totalToProcess = selectedConversations.size;
       const progressBar = document.querySelector('.gt-batch-progress');
       const progressBarFill = document.querySelector('.gt-batch-progress-bar-fill');
       const progressText = document.querySelector('.gt-batch-progress-text');
 
       if (progressBar) progressBar.classList.add('active');
-      if (progressText) progressText.textContent = `0/${toDelete.length}`;
+      if (progressText) progressText.textContent = `0/${totalToProcess}`;
       if (progressBarFill) progressBarFill.style.width = '0%';
 
       let deleted = 0;
       let failed = 0;
 
-      for (const conv of toDelete) {
+      while (selectedConversations.size > 0) {
+        const conversations = getConversationItems();
+        const convToDelete = conversations.find(conv => {
+          const id = getConversationId(conv);
+          return selectedConversations.has(id);
+        });
+
+        if (!convToDelete) {
+          break;
+        }
+
+        const convId = getConversationId(convToDelete);
         try {
-          await deleteConversation(conv);
+          await deleteConversation(convToDelete);
           deleted++;
         } catch (e) {
           console.error('[GT Batch Delete] Failed to delete item:', e);
           failed++;
+        } finally {
+          selectedConversations.delete(convId);
         }
 
-        const percent = ((deleted + failed) / toDelete.length) * 100;
+        const processed = deleted + failed;
+        const percent = Math.min(100, (processed / totalToProcess) * 100);
         if (progressBarFill) progressBarFill.style.width = `${percent}%`;
-        if (progressText) progressText.textContent = `${deleted + failed}/${toDelete.length}`;
+        if (progressText) progressText.textContent = `${processed}/${totalToProcess}`;
       }
 
       showResultDialog(deleted, failed);
@@ -500,6 +537,12 @@
 
   // ======================== Mode Toggle ========================
 
+  function handleSidebarScroll() {
+    if (!isDeleteMode) return;
+    if (debounceTimer) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(injectCheckboxes, 50);
+  }
+
   function enterBatchMode() {
     isDeleteMode = true;
     selectedConversations.clear();
@@ -510,12 +553,16 @@
 
     if (!mutationObserver) {
       mutationObserver = new MutationObserver(() => {
+        if (!isDeleteMode) return;
         if (debounceTimer) clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(injectCheckboxes, 300);
+        debounceTimer = setTimeout(injectCheckboxes, 80);
       });
 
-      const sidebar = findSidebar();
-      mutationObserver.observe(sidebar, { childList: true, subtree: true });
+      activeSidebar = findSidebar();
+      if (activeSidebar) {
+        mutationObserver.observe(activeSidebar, { childList: true, subtree: true });
+        activeSidebar.addEventListener('scroll', handleSidebarScroll, { passive: true });
+      }
     }
   }
 
@@ -532,6 +579,11 @@
     if (mutationObserver) {
       mutationObserver.disconnect();
       mutationObserver = null;
+    }
+
+    if (activeSidebar) {
+      activeSidebar.removeEventListener('scroll', handleSidebarScroll);
+      activeSidebar = null;
     }
 
     cachedBarElements = null;
