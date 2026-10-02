@@ -330,57 +330,62 @@
 
   /**
    * Dismiss all lingering Gemini-native overlay popups, menus, dialogs and backdrops.
-   * Called after batch delete loop ends, before removing the opacity-hiding CSS,
-   * to prevent context menus and "Delete chat?" dialogs from flashing on screen.
+   * NON-DESTRUCTIVE: Uses Angular's own dismissal mechanisms (Escape, backdrop click)
+   * instead of forcibly removing DOM nodes, which would trigger Angular re-renders.
    */
   function dismissAllOverlays() {
-    // 1. Press Escape to close any focused dialog/menu via Angular's CDK
-    document.body.dispatchEvent(new KeyboardEvent('keydown', {
-      key: 'Escape', code: 'Escape', keyCode: 27, bubbles: true, cancelable: true
-    }));
+    const escOpts = { key: 'Escape', code: 'Escape', keyCode: 27, which: 27, bubbles: true, cancelable: true };
 
-    // 2. Click any visible backdrop overlays to dismiss them
+    // 1. Press Escape ON EACH visible menu panel / dialog surface: CDK listens
+    // for keydown on the overlay container and the panel itself, not document.
+    document.querySelectorAll('.cdk-overlay-container, [role="menu"], .mat-mdc-menu-panel, [role="dialog"], mat-dialog-container').forEach((el) => {
+      el.dispatchEvent(new KeyboardEvent('keydown', escOpts));
+    });
+    document.body.dispatchEvent(new KeyboardEvent('keydown', escOpts));
+
+    // 2. Click any visible backdrop overlays to dismiss them naturally
     document.querySelectorAll('.cdk-overlay-backdrop').forEach(backdrop => {
       if (backdrop.offsetWidth > 0 || backdrop.offsetHeight > 0) {
         backdrop.click();
       }
     });
 
-    // 3. Remove overlay panes that contain menus or dialogs
-    document.querySelectorAll('.cdk-overlay-pane').forEach(pane => {
-      const hasMenu = pane.querySelector('[role="menu"], .mat-mdc-menu-panel');
-      const hasDialog = pane.querySelector('[role="dialog"], .mat-mdc-dialog-container');
-      if (hasMenu || hasDialog) {
-        pane.remove();
-      }
-    });
-
-    // 4. Remove standalone menu panels and dialog containers
-    document.querySelectorAll(
-      '[role="menu"], .mat-mdc-menu-panel, [role="dialog"].cdk-overlay-pane'
-    ).forEach(el => {
-      // Don't remove our own GT dialogs
-      if (el.closest('.gt-dialog-overlay')) return;
-      el.remove();
-    });
+    // 3. Send another Escape after backdrop clicks to ensure dialogs close
+    setTimeout(() => {
+      document.querySelectorAll('.cdk-overlay-container, [role="menu"], .mat-mdc-menu-panel, [role="dialog"], mat-dialog-container').forEach((el) => {
+        el.dispatchEvent(new KeyboardEvent('keydown', escOpts));
+      });
+      document.body.dispatchEvent(new KeyboardEvent('keydown', escOpts));
+    }, 50);
   }
 
   async function deleteConversation(conv) {
+    const LOG = '[GT Batch Delete]';
+
+    // Step 1: Find and click the 3-dots menu button
     const menuBtn = conv.querySelector(
       'button[aria-label*="options" i], button[aria-label*="More" i], button[aria-label*="选项" i], button[aria-label*="更多" i], button[aria-label*="option" i], button[aria-haspopup="menu"], .mat-mdc-menu-trigger'
     );
     if (!menuBtn) throw new Error('Menu button not found');
 
     menuBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    await delay(250);
+    await delay(300);
     menuBtn.click();
+    console.log(`${LOG} Step 1: Clicked menu button`);
 
+    // Step 2: Wait for the menu to appear and find the Delete option
     const menu = await waitFor(() => {
-      const menus = document.querySelectorAll('[role="menu"], .mat-mdc-menu-panel, .cdk-overlay-pane, mat-menu-content');
-      return Array.from(menus).find(m => isVisible(m) && !m.closest('.gt-dialog-overlay'));
+      const menus = document.querySelectorAll('[role="menu"], .mat-mdc-menu-panel, mat-menu-content');
+      return Array.from(menus).find(m => {
+        if (m.closest && m.closest('.gt-dialog-overlay')) return false;
+        return (m.offsetWidth > 0 || m.offsetHeight > 0);
+      });
     }, 3000, 150);
 
     if (!menu) throw new Error('Menu not found');
+
+    // Record the menu's overlay pane so we can exclude it from dialog searches later
+    const menuOverlayPane = menu.closest('.cdk-overlay-pane');
 
     const deleteKeywords = [
       'delete', '删除', '刪除', '削除', 'löschen', 'eliminar', 'supprimer',
@@ -389,81 +394,136 @@
     ];
 
     const cancelKeywords = [
-      'cancel', '取消', '取消', '취소', 'abbrechen', 'cancelar', 'annuler',
-      'annulla', 'отмена', 'rədd', 'істо'
+      'cancel', '取消', '취소', 'abbrechen', 'cancelar', 'annuler',
+      'annulla', 'отмена', 'キャンセル', 'batal', 'hủy'
     ];
 
-    const deleteItem = Array.from(menu.querySelectorAll('[role="menuitem"], button, .mat-mdc-menu-item, [data-test-id*="delete"], [data-testid*="delete"], [aria-label*="delete" i], [aria-label*="Delete"]'))
+    const deleteItem = Array.from(menu.querySelectorAll('[role="menuitem"], button, .mat-mdc-menu-item'))
       .find(item => {
         const text = (item.textContent || '').trim().toLowerCase();
         const aria = (item.getAttribute('aria-label') || '').trim().toLowerCase();
-        const testId = (item.getAttribute('data-test-id') || item.getAttribute('data-testid') || '').trim().toLowerCase();
-        return deleteKeywords.some(kw => text.includes(kw) || aria.includes(kw) || testId.includes(kw)) ||
-          testId.includes('delete') || aria.includes('delete');
+        return deleteKeywords.some(kw => text.includes(kw) || aria.includes(kw));
       });
 
     if (!deleteItem) throw new Error('Delete option not found in menu');
 
+    console.log(`${LOG} Step 2: Found delete item: "${(deleteItem.textContent || '').trim()}"`);
     deleteItem.click();
+    console.log(`${LOG} Step 3: Clicked delete item, waiting for confirmation dialog...`);
 
-    await delay(400);
+    // Step 3: Wait for the CONFIRMATION DIALOG to appear
+    // Critical: The dialog will appear in a NEW .cdk-overlay-pane, DIFFERENT from the menu's pane
+    await delay(500);
 
     const confirmKeywords = [
       'confirm', '确认', '確認', '確定', 'delete', '删除', '刪除', '削除', 'löschen', 'eliminar', 'supprimer',
       'bestätigen', 'confirmar', 'confirmer', 'conferma', '확인', '삭제', 'подтвердить',
-      'пуष्टि', 'تأكيد', 'onayla', 'bevestigen', 'potwierdź', 'xác nhận', 'ยืนยัน', 'konfirmasi'
+      'onayla', 'bevestigen', 'potwierdź', 'xác nhận', 'ยืนยัน', 'konfirmasi'
     ];
 
-    // Search strictly inside active dialog container overlay (excluding GT's own dialogs)
     const confirmBtn = await waitFor(() => {
-      const dialogPanes = Array.from(document.querySelectorAll('[role="dialog"], .mat-mdc-dialog-container, .cdk-overlay-pane'))
-        .filter(pane => !pane.closest('.gt-dialog-overlay') && !pane.classList.contains('gt-dialog-overlay'));
+      // Find ALL overlay panes, but EXCLUDE the menu's pane and GT's own dialog overlays
+      const allPanes = Array.from(document.querySelectorAll('.cdk-overlay-pane'));
+      const dialogPanes = allPanes.filter(pane => {
+        // Exclude the menu overlay pane
+        if (menuOverlayPane && pane === menuOverlayPane) return false;
+        // Exclude GT's own dialogs
+        if (pane.closest('.gt-dialog-overlay') || pane.classList.contains('gt-dialog-overlay')) return false;
+        // Must contain a dialog or buttons (not just another menu)
+        const hasDialogRole = pane.querySelector('[role="dialog"], .mat-mdc-dialog-container, [role="alertdialog"]');
+        const hasButtons = pane.querySelectorAll('button, [role="button"]').length >= 2;
+        return hasDialogRole || hasButtons;
+      });
+
+      console.log(`${LOG} Dialog search: found ${dialogPanes.length} candidate dialog panes (excluded menu pane: ${!!menuOverlayPane})`);
 
       for (const dialog of dialogPanes) {
         const buttons = Array.from(dialog.querySelectorAll('button, [role="button"]'));
+        console.log(`${LOG}   Dialog pane has ${buttons.length} buttons: ${buttons.map(b => `"${(b.textContent||'').trim()}"`).join(', ')}`);
+
+        // Strategy A: Find a button matching delete/confirm keywords (excluding cancel)
         const matchedBtn = buttons.find(b => {
           const text = (b.textContent || '').trim().toLowerCase();
           const aria = (b.getAttribute('aria-label') || '').trim().toLowerCase();
-          const testId = (b.getAttribute('data-test-id') || b.getAttribute('data-testid') || '').trim().toLowerCase();
 
-          // Filter out cancel buttons
-          if (cancelKeywords.some(kw => text === kw || aria === kw)) return false;
+          // Skip cancel buttons
+          if (cancelKeywords.some(kw => text.includes(kw) || aria.includes(kw))) return false;
 
-          return deleteKeywords.some(kw => text.includes(kw) || aria.includes(kw) || testId.includes(kw)) ||
-            confirmKeywords.some(kw => text.includes(kw) || aria.includes(kw) || testId.includes(kw)) ||
-            testId.includes('delete') || testId.includes('confirm') || aria.includes('delete') || aria.includes('confirm');
+          return deleteKeywords.some(kw => text.includes(kw) || aria.includes(kw)) ||
+            confirmKeywords.some(kw => text.includes(kw) || aria.includes(kw));
         });
 
-        if (matchedBtn) return matchedBtn;
+        if (matchedBtn) {
+          console.log(`${LOG}   → Matched confirm button: "${(matchedBtn.textContent||'').trim()}"`);
+          return matchedBtn;
+        }
 
-        // Fallback for Angular Material dialogs: the last button in dialog actions is usually Delete/Confirm
+        // Strategy B: In a 2-button dialog (Cancel + Confirm), pick the non-cancel button
         if (buttons.length >= 2) {
-          const lastBtn = buttons[buttons.length - 1];
-          const lastText = (lastBtn.textContent || '').trim().toLowerCase();
-          if (!cancelKeywords.some(kw => lastText === kw)) {
-            return lastBtn;
+          const nonCancelBtns = buttons.filter(b => {
+            const text = (b.textContent || '').trim().toLowerCase();
+            return !cancelKeywords.some(kw => text.includes(kw));
+          });
+          if (nonCancelBtns.length === 1) {
+            console.log(`${LOG}   → Fallback: only non-cancel button: "${(nonCancelBtns[0].textContent||'').trim()}"`);
+            return nonCancelBtns[0];
+          }
+          // If multiple non-cancel buttons, pick the last one (usually the primary/destructive action)
+          if (nonCancelBtns.length > 1) {
+            const last = nonCancelBtns[nonCancelBtns.length - 1];
+            console.log(`${LOG}   → Fallback: last non-cancel button: "${(last.textContent||'').trim()}"`);
+            return last;
           }
         }
       }
+
+      // Strategy C: Look for any alertdialog or role="dialog" ANYWHERE (not just in overlay panes)
+      const anyDialogs = document.querySelectorAll('[role="alertdialog"], [role="dialog"]:not(.gt-dialog-overlay *)');
+      for (const dialog of anyDialogs) {
+        if (dialog.closest('.gt-dialog-overlay')) continue;
+        const buttons = Array.from(dialog.querySelectorAll('button, [role="button"]'));
+        const matchedBtn = buttons.find(b => {
+          const text = (b.textContent || '').trim().toLowerCase();
+          if (cancelKeywords.some(kw => text.includes(kw))) return false;
+          return deleteKeywords.some(kw => text.includes(kw)) || confirmKeywords.some(kw => text.includes(kw));
+        });
+        if (matchedBtn) {
+          console.log(`${LOG}   → Strategy C matched in [role="dialog"]: "${(matchedBtn.textContent||'').trim()}"`);
+          return matchedBtn;
+        }
+      }
+
       return null;
-    }, 3000, 150);
+    }, 4000, 200);
 
-    if (!confirmBtn) throw new Error('Confirm button in dialog not found');
+    if (!confirmBtn) {
+      console.error(`${LOG} FAILED: Confirm button not found after 4s. DOM snapshot of overlay panes:`);
+      document.querySelectorAll('.cdk-overlay-pane').forEach((p, i) => {
+        console.error(`${LOG}   Pane ${i}: ${p.innerHTML.substring(0, 200)}`);
+      });
+      throw new Error('Confirm button in dialog not found');
+    }
 
+    console.log(`${LOG} Step 4: Clicking confirm button: "${(confirmBtn.textContent||'').trim()}"`);
     confirmBtn.click();
 
-    // Truth Verification: Wait up to 4s for Gemini to actually unmount `conv` element from DOM
+    // Step 5: Truth Verification — wait up to 5s for the conversation element to be unmounted from DOM
+    console.log(`${LOG} Step 5: Waiting for DOM unmount verification...`);
     const isUnmounted = await waitFor(() => {
       return !document.body.contains(conv) || (conv.offsetWidth === 0 && conv.offsetHeight === 0);
-    }, 4000, 150).then(() => true).catch(() => false);
+    }, 5000, 200).then(() => true).catch(() => false);
 
     if (!isUnmounted) {
+      console.error(`${LOG} FAILED: Conv element still in DOM after 5s. Contains: ${document.body.contains(conv)}, offsetW: ${conv.offsetWidth}, offsetH: ${conv.offsetHeight}`);
       throw new Error('Conversation element was not unmounted from DOM by Gemini');
     }
 
+    console.log(`${LOG} Step 6: ✅ Successfully deleted & verified`);
+
+    // Clean up lingering overlays non-destructively
     await delay(200);
     dismissAllOverlays();
-    await delay(150);
+    await delay(200);
   }
 
   // ======================== Dialogs ========================

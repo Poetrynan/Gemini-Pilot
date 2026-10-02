@@ -1401,6 +1401,28 @@
     return trigger || null;
   }
 
+  // Close the native CDK/Material menu panel. Angular listens for Escape on
+  // the menu element itself and on the CDK overlay container — a synthetic
+  // Escape dispatched on `document` never reaches either, which left the menu
+  // open after clicking our injected items. Dispatch on the correct targets,
+  // then fall back to toggling the trigger if the panel is still visible.
+  function closeNativeMenu(menu) {
+    const opts = { key: 'Escape', code: 'Escape', keyCode: 27, which: 27, bubbles: true, cancelable: true };
+    if (menu) menu.dispatchEvent(new KeyboardEvent('keydown', opts));
+    const container = (menu && menu.closest && menu.closest('.cdk-overlay-container')) ||
+      document.querySelector('.cdk-overlay-container');
+    if (container) container.dispatchEvent(new KeyboardEvent('keydown', opts));
+    document.dispatchEvent(new KeyboardEvent('keydown', opts));
+
+    setTimeout(() => {
+      if (!menu || !document.contains(menu)) return;
+      const rect = menu.getBoundingClientRect();
+      if (rect.width === 0 && rect.height === 0) return;
+      const trigger = getTriggerForMenu(menu);
+      if (trigger) trigger.click();
+    }, 80);
+  }
+
   function tryInjectMenuItems() {
     if (menuInjectGuard) return;
     if (window.GTBatchDelete && window.GTBatchDelete.isActive && window.GTBatchDelete.isActive()) return;
@@ -1483,7 +1505,7 @@
           const rect = moveItem.getBoundingClientRect();
           const x = rect.left > 0 ? rect.left : window.innerWidth / 2;
           const y = rect.top > 0 ? rect.top : window.innerHeight / 2;
-          document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+          closeNativeMenu(menu);
           setTimeout(() => showSelector(tid, x - 60, y + 10), 100);
         });
 
@@ -1501,7 +1523,7 @@
         batchItem.addEventListener('click', (e) => {
           e.stopPropagation();
           e.preventDefault();
-          document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+          closeNativeMenu(menu);
           if (window.GTBatchDelete) window.GTBatchDelete.enter();
         });
 
